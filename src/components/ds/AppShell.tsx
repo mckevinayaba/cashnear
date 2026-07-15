@@ -5,32 +5,40 @@ import { BottomNav } from "./BottomNav";
 interface AppShellProps {
   header?: ReactNode;
   className?: string;
-  /** Hide the bottom nav (e.g. for full-screen flows like onboarding). */
   hideNav?: boolean;
+  /** Wide desktop layout for institution / analytics views. */
+  desktopWide?: boolean;
 }
 
 /**
- * AppShell — mobile-first layout with fixed bottom nav.
- * Desktop is fully responsive: content stays centered in a phone-width column.
+ * AppShell — mobile-first single-column with responsive desktop widening.
+ * On >= lg, the shell centres in a narrow reading column unless
+ * `desktopWide` is set, which unlocks a Stripe-Dashboard-style canvas.
  */
 export function AppShell({
   header,
   hideNav,
   className,
+  desktopWide,
   children,
 }: PropsWithChildren<AppShellProps>) {
   return (
     <div className="relative min-h-dvh bg-background text-foreground">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
+      <div
+        className={cn(
+          "mx-auto flex min-h-dvh w-full flex-col",
+          desktopWide ? "max-w-6xl" : "max-w-[440px] lg:max-w-[520px]",
+        )}
+      >
         {header ? (
-          <header className="sticky top-0 z-30 bg-background/80 px-5 pb-3 pt-[max(env(safe-area-inset-top),1rem)] backdrop-blur-xl">
+          <header className="sticky top-0 z-30 bg-background/70 px-6 pb-3 pt-[max(env(safe-area-inset-top),1.25rem)] backdrop-blur-xl">
             {header}
           </header>
         ) : null}
         <main
           className={cn(
-            "flex-1 px-5",
-            hideNav ? "pb-8" : "pb-32",
+            "flex-1 px-6",
+            hideNav ? "pb-10" : "pb-28",
             className,
           )}
         >
@@ -47,8 +55,15 @@ export function Screen({
   className,
 }: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={cn("flex flex-col gap-6 py-4 animate-rise", className)}>
+    <div className={cn("flex flex-col gap-10 py-6 animate-rise", className)}>
       {children}
     </div>
   );
+}
+
+export function Section({
+  children,
+  className,
+}: PropsWithChildren<{ className?: string }>) {
+  return <section className={cn("flex flex-col gap-4", className)}>{children}</section>;
 }

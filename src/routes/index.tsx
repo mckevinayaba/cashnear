@@ -1,32 +1,30 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpRight, ShieldCheck, MapPin } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AppShell,
   Screen,
-  Card,
-  CardBody,
+  Section,
   Display,
   Headline,
-  Title,
   Muted,
   Eyebrow,
   Numeric,
   Button,
 } from "@/components/ds";
+import { DEFAULT_LOCALE, formatAmount } from "@/lib/currency";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CashNear — Neighbourhood financial access" },
+      { title: "CashNear — Cash, near you" },
       {
         name: "description",
         content:
-          "CashNear connects people, merchants, banks and institutions through Africa's largest trusted cash access network.",
+          "CashNear is Africa's neighbourhood financial access infrastructure. Trusted cash, everywhere.",
       },
       { property: "og:title", content: "CashNear" },
       {
         property: "og:description",
-        content: "Africa's neighbourhood financial access infrastructure.",
+        content: "Cash, near you. Africa's trusted neighbourhood cash network.",
       },
     ],
   }),
@@ -34,84 +32,107 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const loc = DEFAULT_LOCALE;
+
   return (
-    <AppShell
-      header={
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-surface-elevated">
-              <span className="text-sm font-semibold tracking-tight text-gold">CN</span>
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-[13px] text-muted-foreground">Good evening</span>
-              <span className="text-sm font-semibold">Welcome to CashNear</span>
-            </div>
-          </div>
-          <button
-            aria-label="Notifications"
-            className="grid h-10 w-10 place-items-center rounded-full border border-border bg-surface-elevated text-foreground"
-          >
-            <ShieldCheck className="h-[18px] w-[18px]" strokeWidth={1.75} />
-          </button>
-        </div>
-      }
-    >
-      <Screen>
-        <section className="pt-2">
-          <Eyebrow>Available anywhere</Eyebrow>
-          <Display className="mt-2">
-            Cash, when
+    <AppShell header={<HomeHeader />}>
+      <Screen className="!gap-14">
+        {/* Hero */}
+        <section className="pt-6">
+          <Eyebrow>Cash access · {loc.country}</Eyebrow>
+          <Display className="mt-6">
+            Cash,
             <br />
-            you need it.
+            near you.
           </Display>
-          <Muted className="mt-3 max-w-[28ch]">
-            Request cash from verified operators in your neighbourhood. No queues.
-            No branches.
+          <Muted className="mt-5 max-w-[32ch]">
+            Request cash from verified neighbourhood operators. No queues, no
+            branches — just people you can trust.
           </Muted>
+
+          <div className="mt-8 flex flex-col gap-3">
+            <Link to="/get-cash">
+              <Button variant="primary" size="lg" fullWidth>
+                Find cash nearby
+              </Button>
+            </Link>
+            <Link to="/earn">
+              <Button variant="ghost" size="lg" fullWidth>
+                Become an operator
+              </Button>
+            </Link>
+          </div>
         </section>
 
-        <Card variant="elevated">
-          <CardBody className="flex flex-col gap-5">
-            <div className="flex items-baseline justify-between">
-              <Eyebrow>Ready to withdraw</Eyebrow>
-              <span className="text-[11px] text-muted-foreground">Verified</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <Numeric className="text-5xl">••••</Numeric>
-              <span className="pb-1 text-sm text-muted-foreground">NGN</span>
-            </div>
-            <Button variant="gold" size="lg" fullWidth>
-              Get Cash
-              <ArrowUpRight className="h-5 w-5" strokeWidth={2.25} />
-            </Button>
-          </CardBody>
-        </Card>
+        {/* Network pulse — quiet trust signal */}
+        <Section>
+          <div className="flex items-baseline justify-between">
+            <Headline>The network</Headline>
+            <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="h-1.5 w-1.5 animate-fade rounded-full bg-success" />
+              Live
+            </span>
+          </div>
 
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <Headline>Nearby trust</Headline>
-            <span className="text-xs text-muted-foreground">Live</span>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-8 border-t border-border pt-8">
+            <Stat label="Verified operators" value="1,248" hint="within 3 km" />
+            <Stat label="Avg. match time" value="2m 14s" hint="tonight" />
+            <Stat label="Cash available" value={formatAmount(482000, loc)} hint="in your area" />
+            <Stat label="Trust rating" value="4.94" hint="last 30 days" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Card>
-              <CardBody className="flex flex-col gap-2">
-                <MapPin className="h-5 w-5 text-gold" strokeWidth={1.75} />
-                <Title>Verified operators</Title>
-                <Numeric className="text-2xl">1,248</Numeric>
-                <Muted>within 3 km</Muted>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody className="flex flex-col gap-2">
-                <ShieldCheck className="h-5 w-5 text-success" strokeWidth={1.75} />
-                <Title>Avg. response</Title>
-                <Numeric className="text-2xl">2m 14s</Numeric>
-                <Muted>tonight</Muted>
-              </CardBody>
-            </Card>
-          </div>
+        </Section>
+
+        {/* Editorial footer */}
+        <section className="border-t border-border pt-8">
+          <Eyebrow>Infrastructure</Eyebrow>
+          <p className="mt-4 font-display text-2xl leading-tight tracking-tight text-foreground/90">
+            Connecting people, merchants, banks and institutions through
+            Africa's largest trusted cash network.
+          </p>
         </section>
       </Screen>
     </AppShell>
+  );
+}
+
+function HomeHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        <Wordmark />
+      </div>
+      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+        ZA
+      </div>
+    </div>
+  );
+}
+
+export function Wordmark() {
+  return (
+    <span className="font-display text-[19px] tracking-[-0.02em] text-foreground">
+      Cash<span className="text-gold">·</span>Near
+    </span>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </span>
+      <Numeric className="text-[30px] leading-none">{value}</Numeric>
+      <span className="text-[12px] text-muted-foreground">{hint}</span>
+    </div>
   );
 }

@@ -2,8 +2,8 @@ import { cn } from "@/lib/utils";
 import type { HTMLAttributes, PropsWithChildren } from "react";
 
 /**
- * Typography scale for CashNear.
- * Large numbers, minimal text, tight tracking.
+ * Typography — editorial serif for hero moments, geometric sans for UI.
+ * Numbers are big and quiet. Text breathes.
  */
 
 export function Display({
@@ -14,7 +14,7 @@ export function Display({
   return (
     <h1
       className={cn(
-        "text-[44px] leading-[1.02] font-semibold tracking-[-0.03em] text-foreground",
+        "font-display text-[52px] leading-[0.98] tracking-[-0.02em] text-foreground sm:text-[64px]",
         className,
       )}
       {...props}
@@ -32,7 +32,7 @@ export function Headline({
   return (
     <h2
       className={cn(
-        "text-2xl font-semibold tracking-tight text-foreground",
+        "font-display text-[28px] leading-[1.05] tracking-[-0.015em] text-foreground",
         className,
       )}
       {...props}
@@ -49,7 +49,10 @@ export function Title({
 }: PropsWithChildren<HTMLAttributes<HTMLHeadingElement>>) {
   return (
     <h3
-      className={cn("text-base font-semibold text-foreground", className)}
+      className={cn(
+        "text-[15px] font-medium tracking-[-0.005em] text-foreground",
+        className,
+      )}
       {...props}
     >
       {children}
@@ -63,7 +66,7 @@ export function Body({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>) {
   return (
-    <p className={cn("text-[15px] leading-6 text-foreground", className)} {...props}>
+    <p className={cn("text-[15px] leading-[1.55] text-foreground/90", className)} {...props}>
       {children}
     </p>
   );
@@ -76,7 +79,7 @@ export function Muted({
 }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>) {
   return (
     <p
-      className={cn("text-sm leading-5 text-muted-foreground", className)}
+      className={cn("text-[13.5px] leading-[1.55] text-muted-foreground", className)}
       {...props}
     >
       {children}
@@ -92,7 +95,7 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground",
+        "text-[10.5px] font-medium uppercase tracking-[0.22em] text-muted-foreground",
         className,
       )}
       {...props}
@@ -110,7 +113,7 @@ export function Numeric({
   return (
     <span
       className={cn(
-        "tabular font-semibold tracking-[-0.02em] text-foreground",
+        "tabular font-display tracking-[-0.02em] text-foreground",
         className,
       )}
       {...props}
