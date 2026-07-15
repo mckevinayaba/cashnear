@@ -2,25 +2,24 @@ import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "react";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "elevated" | "outline" | "gold";
+  variant?: "default" | "quiet" | "lift" | "outline";
 }
 
 /**
- * Card — floating surface with subtle elevation.
- * Use `elevated` for the primary card on a screen.
- * Use `gold` sparingly, only for critical trust/emphasis moments.
+ * Card — subtle surface. No borders by default (surface elevation only).
+ * quiet   — flat surface, no shadow
+ * lift    — reserved for a screen's primary card
+ * outline — hairline border, no fill
  */
 export function Card({ className, variant = "default", ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-card text-card-foreground",
-        variant === "default" && "shadow-[var(--shadow-elevated)]",
-        variant === "elevated" &&
-          "bg-surface-elevated border-border-strong shadow-[var(--shadow-float)]",
-        variant === "outline" && "bg-transparent",
-        variant === "gold" &&
-          "border-gold/30 bg-surface-elevated shadow-[var(--shadow-gold)]",
+        "rounded-2xl text-card-foreground",
+        variant === "default" && "bg-surface",
+        variant === "quiet" && "bg-surface-2/40",
+        variant === "lift" && "bg-surface-2 shadow-[var(--shadow-lift)]",
+        variant === "outline" && "border border-border bg-transparent",
         className,
       )}
       {...props}
@@ -29,24 +28,19 @@ export function Card({ className, variant = "default", ...props }: CardProps) {
 }
 
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-6 pb-3", className)} {...props} />;
+  return <div className={cn("px-6 pt-6 pb-2", className)} {...props} />;
 }
-
 export function CardBody({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-6 pt-3", className)} {...props} />;
+  return <div className={cn("px-6 py-6", className)} {...props} />;
 }
-
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-lg font-semibold tracking-tight text-foreground", className)}
+      className={cn("text-[15px] font-medium tracking-tight text-foreground", className)}
       {...props}
     />
   );
 }
-
 export function CardSubtle({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return (
-    <p className={cn("text-sm text-muted-foreground", className)} {...props} />
-  );
+  return <p className={cn("text-[13px] text-muted-foreground", className)} {...props} />;
 }

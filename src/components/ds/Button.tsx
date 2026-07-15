@@ -3,45 +3,39 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Button — CashNear design system primitive.
- * `primary`   Ivory on navy — default CTA
- * `gold`      Rich Gold — reserved for the single dominant action per screen
- * `ghost`     Text-only on dark surfaces
- * `secondary` Elevated navy surface
- * `success`   Premium Emerald — confirmations only
+ * Button — quiet, confident, premium.
+ * primary — ivory on navy (default CTA)
+ * gold — muted gold, reserved for the single dominant action per flow
+ * ghost — text only
+ * outline — thin border on dark surface
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-tight transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background,color,transform,border-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40 active:scale-[0.985]",
   {
     variants: {
       variant: {
         primary:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[var(--shadow-elevated)]",
+          "bg-primary text-primary-foreground hover:bg-primary/95",
         gold:
-          "bg-gold text-gold-foreground hover:brightness-105 shadow-[var(--shadow-gold)]",
+          "bg-gold text-gold-foreground hover:bg-gold/95",
         secondary:
-          "bg-surface-elevated text-foreground border border-border-strong hover:bg-surface-elevated/80",
+          "bg-surface-2 text-foreground hover:bg-surface-2/80 border border-border-strong",
         ghost:
-          "bg-transparent text-foreground hover:bg-surface-elevated",
+          "bg-transparent text-foreground hover:bg-surface-2/60",
+        outline:
+          "bg-transparent border border-border-strong text-foreground hover:border-foreground/30",
         success:
           "bg-success text-success-foreground hover:brightness-105",
-        outline:
-          "bg-transparent border border-border-strong text-foreground hover:bg-surface-elevated",
       },
       size: {
-        sm: "h-10 px-4 text-sm",
-        md: "h-12 px-6 text-[15px]",
-        lg: "h-14 px-8 text-base",
-        icon: "h-11 w-11",
+        sm: "h-9 px-4 text-[13px]",
+        md: "h-11 px-5 text-[14px]",
+        lg: "h-12 px-6 text-[15px]",
+        icon: "h-10 w-10",
       },
-      fullWidth: {
-        true: "w-full",
-      },
+      fullWidth: { true: "w-full" },
     },
-    defaultVariants: {
-      variant: "primary",
-      size: "md",
-    },
+    defaultVariants: { variant: "primary", size: "md" },
   },
 );
 
