@@ -19,6 +19,8 @@ import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedCustomerRouteImport } from './routes/_authenticated/customer'
+import { Route as AuthenticatedOperatorDashboardRouteImport } from './routes/_authenticated/operator.dashboard'
+import { Route as AuthenticatedOperatorApplyRouteImport } from './routes/_authenticated/operator.apply'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -69,6 +71,18 @@ const AuthenticatedCustomerRoute = AuthenticatedCustomerRouteImport.update({
   path: '/customer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOperatorDashboardRoute =
+  AuthenticatedOperatorDashboardRouteImport.update({
+    id: '/operator/dashboard',
+    path: '/operator/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOperatorApplyRoute =
+  AuthenticatedOperatorApplyRouteImport.update({
+    id: '/operator/apply',
+    path: '/operator/apply',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +94,8 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/operator/apply': typeof AuthenticatedOperatorApplyRoute
+  '/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,6 +107,8 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/operator/apply': typeof AuthenticatedOperatorApplyRoute
+  '/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +122,8 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/_authenticated/operator/apply': typeof AuthenticatedOperatorApplyRoute
+  '/_authenticated/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +137,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/operator/apply'
+    | '/operator/dashboard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,6 +150,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/operator/apply'
+    | '/operator/dashboard'
   id:
     | '__root__'
     | '/'
@@ -140,6 +164,8 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/_authenticated/operator/apply'
+    | '/_authenticated/operator/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -224,6 +250,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/operator/dashboard': {
+      id: '/_authenticated/operator/dashboard'
+      path: '/operator/dashboard'
+      fullPath: '/operator/dashboard'
+      preLoaderRoute: typeof AuthenticatedOperatorDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/operator/apply': {
+      id: '/_authenticated/operator/apply'
+      path: '/operator/apply'
+      fullPath: '/operator/apply'
+      preLoaderRoute: typeof AuthenticatedOperatorApplyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -231,12 +271,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCustomerRoute: typeof AuthenticatedCustomerRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedOperatorApplyRoute: typeof AuthenticatedOperatorApplyRoute
+  AuthenticatedOperatorDashboardRoute: typeof AuthenticatedOperatorDashboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCustomerRoute: AuthenticatedCustomerRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedOperatorApplyRoute: AuthenticatedOperatorApplyRoute,
+  AuthenticatedOperatorDashboardRoute: AuthenticatedOperatorDashboardRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
