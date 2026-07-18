@@ -300,7 +300,7 @@ Both remaining conditions are verification steps, not further code changes. If t
 | `7db4bcb` | chore: normalise repository line endings |
 | `5d49b46` | chore: fix lint/typecheck tooling for the new test suite |
 | `78155cc` | docs: add stage 1 remediation report (initial draft) |
-| *(pending)* | security: apply founder governance decisions on reinstatement and rejection — commit made immediately after this report update; see the branch log for its final SHA |
+| `6372dfb` | security: apply founder governance decisions on reinstatement and rejection |
 
 - **Migrations added:** 7 (`20260718070000` through `20260718080000`, see Database changes above)
 - **Files changed (non-doc):** `.gitattributes` (new), `tsconfig.json`, `tsconfig.test.json` (new), `package.json`, `src/hooks/use-auth.ts`, `src/integrations/supabase/types.ts`, `src/lib/admin.functions.ts`, `src/lib/customer.functions.ts`, `src/lib/operators.functions.ts`, `src/lib/operator-application-state.ts` (new), `src/lib/__tests__/operator-application-state.test.ts` (new), `supabase/migrations/*` (7 new), `supabase/tests/*` (11 new files), `bun.lock`
