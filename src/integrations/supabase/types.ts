@@ -451,6 +451,15 @@ export type Database = {
         Args: { _business_id: string; _user_id: string }
         Returns: boolean
       }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_entity_id?: string | null
+          p_entity_type: string
+          p_metadata?: Json | null
+        }
+        Returns: Database["public"]["Tables"]["audit_logs"]["Row"]
+      }
     }
     Enums: {
       app_role:
