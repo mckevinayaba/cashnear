@@ -1,30 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  AppShell,
-  Screen,
-  Section,
-  Display,
-  Headline,
-  Muted,
-  Eyebrow,
-  Numeric,
-  Button,
-} from "@/components/ds";
-import { DEFAULT_LOCALE, formatAmount } from "@/lib/currency";
+import { AppShell, Screen, Display, Muted, Eyebrow, Numeric, Button } from "@/components/ds";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CashNear — Cash, near you" },
+      { title: "CashNear — Neighbourhood cash access · South Africa" },
       {
         name: "description",
         content:
-          "CashNear is Africa's neighbourhood financial access infrastructure. Trusted cash, everywhere.",
+          "CashNear is a controlled pilot connecting South African customers with verified neighbourhood operators for trusted, on-demand cash.",
       },
       { property: "og:title", content: "CashNear" },
       {
         property: "og:description",
-        content: "Cash, near you. Africa's trusted neighbourhood cash network.",
+        content: "Neighbourhood cash access. South Africa pilot.",
       },
     ],
   }),
@@ -32,80 +23,75 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const loc = DEFAULT_LOCALE;
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSignedIn(!!s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   return (
-    <AppShell header={<HomeHeader />}>
-      <Screen className="!gap-14">
-        {/* Hero */}
-        <section className="pt-6">
-          <Eyebrow>Cash access · {loc.country}</Eyebrow>
+    <AppShell hideNav>
+      <Screen className="!gap-16">
+        <header className="flex items-center justify-between pt-2">
+          <Wordmark />
+          <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-gold" /> ZA · Pilot
+          </span>
+        </header>
+
+        <section className="pt-4">
+          <Eyebrow>Neighbourhood cash access</Eyebrow>
           <Display className="mt-6">
             Cash,
             <br />
             near you.
           </Display>
-          <Muted className="mt-5 max-w-[32ch]">
-            Request cash from verified neighbourhood operators. No queues, no
-            branches — just people you can trust.
+          <Muted className="mt-5 max-w-[34ch]">
+            A controlled South African pilot connecting people who need cash with verified
+            neighbourhood operators. Invitation only.
           </Muted>
 
           <div className="mt-8 flex flex-col gap-3">
-            <Link to="/get-cash">
-              <Button variant="primary" size="lg" fullWidth>
-                Find cash nearby
-              </Button>
-            </Link>
-            <Link to="/earn">
-              <Button variant="ghost" size="lg" fullWidth>
-                Become an operator
-              </Button>
-            </Link>
+            {signedIn ? (
+              <Link to="/home">
+                <Button size="lg" fullWidth>
+                  Continue to CashNear
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button size="lg" fullWidth>
+                    Sign in
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button variant="ghost" size="lg" fullWidth>
+                    Create account
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </section>
 
-        {/* Network pulse — quiet trust signal */}
-        <Section>
-          <div className="flex items-baseline justify-between">
-            <Headline>The network</Headline>
-            <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <span className="h-1.5 w-1.5 animate-fade rounded-full bg-success" />
-              Live
-            </span>
-          </div>
+        <section className="grid grid-cols-2 gap-x-8 gap-y-8 border-t border-border pt-8">
+          <Stat label="Market" value="ZA" hint="South Africa · pilot" />
+          <Stat label="Currency" value="R" hint="South African Rand" />
+          <Stat label="Fee band" value="R2–8" hint="per pilot request" />
+          <Stat label="Verification" value="Manual" hint="ops-reviewed" />
+        </section>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-8 border-t border-border pt-8">
-            <Stat label="Verified operators" value="1,248" hint="within 3 km" />
-            <Stat label="Avg. match time" value="2m 14s" hint="tonight" />
-            <Stat label="Cash available" value={formatAmount(482000, loc)} hint="in your area" />
-            <Stat label="Trust rating" value="4.94" hint="last 30 days" />
-          </div>
-        </Section>
-
-        {/* Editorial footer */}
         <section className="border-t border-border pt-8">
           <Eyebrow>Infrastructure</Eyebrow>
           <p className="mt-4 font-display text-2xl leading-tight tracking-tight text-foreground/90">
-            Connecting people, merchants, banks and institutions through
-            Africa's largest trusted cash network.
+            Building South Africa's most trusted neighbourhood cash network — one verified operator
+            at a time.
           </p>
         </section>
       </Screen>
     </AppShell>
-  );
-}
-
-function HomeHeader() {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2.5">
-        <Wordmark />
-      </div>
-      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-        <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-        ZA
-      </div>
-    </div>
   );
 }
 
@@ -117,20 +103,10 @@ export function Wordmark() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-}) {
+function Stat({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </span>
+      <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
       <Numeric className="text-[30px] leading-none">{value}</Numeric>
       <span className="text-[12px] text-muted-foreground">{hint}</span>
     </div>
