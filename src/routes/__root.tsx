@@ -77,20 +77,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CashNear — Neighbourhood financial access" },
+      { title: "CashNear — Neighbourhood cash access, safely." },
       {
         name: "description",
         content:
-          "Africa's neighbourhood financial access infrastructure. Trusted cash, everywhere.",
+          "CashNear connects South Africans with verified neighbourhood businesses that can help you access cash safely, conveniently and transparently. Preparing for a controlled Johannesburg pilot.",
       },
       { name: "author", content: "CashNear" },
-      { property: "og:title", content: "CashNear" },
+      { property: "og:title", content: "CashNear — Neighbourhood cash access, safely." },
       {
         property: "og:description",
-        content: "Africa's neighbourhood financial access infrastructure.",
+        content: "CashNear connects South Africans with verified neighbourhood businesses that can help you access cash safely, conveniently and transparently. Preparing for a controlled Johannesburg pilot.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "CashNear — Neighbourhood cash access, safely." },
+      { name: "twitter:description", content: "CashNear connects South Africans with verified neighbourhood businesses that can help you access cash safely, conveniently and transparently. Preparing for a controlled Johannesburg pilot." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/004e30f9-8c4d-4a19-bd10-9ad5e91f6214/id-preview-de3a0e4c--6f44df8c-8160-4c4b-9a63-0a983f413083.lovable.app-1784357154603.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/004e30f9-8c4d-4a19-bd10-9ad5e91f6214/id-preview-de3a0e4c--6f44df8c-8160-4c4b-9a63-0a983f413083.lovable.app-1784357154603.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

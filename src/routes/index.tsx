@@ -11,11 +11,11 @@ export const Route = createFileRoute("/")({
         content:
           "CashNear connects South Africans with verified neighbourhood businesses that can help you access cash safely, conveniently and transparently. Preparing for a controlled Johannesburg pilot.",
       },
-      { property: "og:title", content: "CashNear — Need cash? Find it nearby." },
+      { property: "og:title", content: "CashNear — Neighbourhood cash access, safely." },
       {
         property: "og:description",
         content:
-          "Verified neighbourhood cash access for South Africa. Controlled pilot launching in Johannesburg.",
+          "CashNear connects South Africans with verified neighbourhood businesses that can help you access cash safely, conveniently and transparently. Preparing for a controlled Johannesburg pilot.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
