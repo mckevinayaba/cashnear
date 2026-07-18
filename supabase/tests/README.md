@@ -1,25 +1,37 @@
 # Stage 1 security regression tests (SQL)
 
-These scripts prove the C-01/C-02/C-04/H-01/H-02/H-03 fixes at the database
-layer — the layer the pure `bun test` suite in `src/lib/__tests__/` cannot
-reach (RLS, column grants, triggers, storage). **They were written but not
-executed in this session** — no Supabase CLI or Docker is available in this
-environment (verified: `supabase --version` and `docker --version` both
-fail). Do not treat them as passing until someone runs them.
+These 7 scripts prove the C-01/C-02/C-04/H-01/H-02/H-03 fixes and the
+founder governance decisions (reinstatement authority, rejection
+terminality) at the database layer — the layer the pure `bun test` suite in
+`src/lib/__tests__/` cannot reach (RLS, column grants, triggers, storage).
+**They were written and manually reviewed (two latent bugs in the exception
+handling were found and fixed — see git history) but not executed against a
+real Postgres instance in any session so far** — no Supabase CLI, Docker, or
+even `psql` is available in this environment (verified directly, not
+assumed). Do not treat them as passing until someone actually runs them; see
+`docs/SUPABASE_SECURITY_TESTING.md` for the full procedure.
 
 ## How to run
 
 ```sh
-supabase start          # local Postgres + GoTrue + Storage, from this repo's migrations
-supabase db reset        # applies all 10 committed migrations to a clean database
-psql "$(supabase status -o env | grep DB_URL | cut -d= -f2)" -f supabase/tests/run_all.sql
+bun run test:db
 ```
 
-Or against any Postgres connection string with the migrations already
-applied:
+This runs `supabase/tests/run.sh`, which resets the **local** Supabase
+database, replays all 11 committed migrations, and runs every script below
+in order. It never accepts a connection string as input and refuses to run
+against anything that doesn't look like `127.0.0.1`/`localhost` — it cannot
+be pointed at a staging or production project. See
+`docs/SUPABASE_SECURITY_TESTING.md` for the full walkthrough, including how
+to verify a staging or the live Lovable Cloud project separately (a manual,
+deliberate process, not this script).
+
+Equivalent by hand:
 
 ```sh
-psql "$DATABASE_URL" -f supabase/tests/run_all.sql
+supabase start           # local Postgres + GoTrue + Storage, from this repo's migrations
+supabase db reset        # applies all 11 committed migrations to a clean database
+psql "$(supabase status -o env | grep '^DB_URL=' | cut -d= -f2- | tr -d '"')" -v ON_ERROR_STOP=1 -f supabase/tests/run_all.sql
 ```
 
 Each script uses plain `DO $$ ... RAISE EXCEPTION ...` assertion blocks (no

@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "bun test",
+    "test:db": "bash supabase/tests/run.sh",
     "check": "bun run lint && bun run typecheck && bun run test"
   },
   "dependencies": {
