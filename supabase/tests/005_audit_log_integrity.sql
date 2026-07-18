@@ -59,12 +59,26 @@ BEGIN
     PERFORM pg_temp.fail('log_audit_event did not write the expected attributed row');
   END IF;
 
-  -- 4. Invalid action shape is rejected (basic validation).
+  -- 4. Invalid action shape is rejected (basic validation). The exception
+  -- handler's only job is to stop the expected rejection from aborting the
+  -- script -- it must never also swallow a FAIL, so the actual assertion
+  -- happens in the unguarded IF below, not inside this BEGIN/EXCEPTION block
+  -- (a bare "WHEN OTHERS" around a fail() call would swallow the fail()
+  -- itself, since it's just another exception, and silently report PASS).
+  DECLARE
+    v_accepted boolean := false;
   BEGIN
-    PERFORM public.log_audit_event('not a valid action', 'x', NULL, NULL);
-    PERFORM pg_temp.fail('log_audit_event accepted a malformed action string');
-  EXCEPTION WHEN OTHERS THEN
-    PERFORM pg_temp.pass('log_audit_event rejects a malformed action string');
+    BEGIN
+      PERFORM public.log_audit_event('not a valid action', 'x', NULL, NULL);
+      v_accepted := true;
+    EXCEPTION WHEN OTHERS THEN
+      v_accepted := false;
+    END;
+    IF v_accepted THEN
+      PERFORM pg_temp.fail('log_audit_event accepted a malformed action string');
+    ELSE
+      PERFORM pg_temp.pass('log_audit_event rejects a malformed action string');
+    END IF;
   END;
 
   -- 5. A real privileged action (super_admin role grant) still produces a

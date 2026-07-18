@@ -59,13 +59,17 @@ BEGIN
   END IF;
 
   -- ...but cannot upload a document while suspended (operational action blocked).
+  -- The exception handler's only job is to stop an *expected* rejection from
+  -- aborting the rest of the script -- it must never also swallow a FAIL, so
+  -- the actual assertion happens entirely in the unguarded IF EXISTS check
+  -- below, not inside this BEGIN/EXCEPTION block.
   BEGIN
     INSERT INTO public.operator_documents (business_id, uploaded_by, doc_type, storage_path)
       VALUES (v_business, v_owner, 'other', v_business::text || '/other/test.pdf');
-    PERFORM pg_temp.fail('suspended owner was able to upload a document');
-  EXCEPTION WHEN insufficient_privilege OR others THEN
-    -- RLS violations on INSERT surface as a policy-check failure, not
-    -- necessarily insufficient_privilege; either way, zero rows must exist.
+  EXCEPTION WHEN OTHERS THEN
+    -- RLS violations on INSERT can surface as insufficient_privilege or a
+    -- generic policy-check failure depending on Postgres version; either
+    -- way, the EXISTS check below is the real assertion.
     NULL;
   END;
   IF EXISTS (SELECT 1 FROM public.operator_documents WHERE business_id = v_business) THEN
