@@ -2,7 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isValidAdminTransition } from "@/lib/operator-application-state";
+import {
+  isValidAdminTransition,
+  canReinstateFrom,
+  isReinstatementActorEligible,
+} from "@/lib/operator-application-state";
 import type { Database } from "@/integrations/supabase/types";
 
 const decisionSchema = z.object({
@@ -66,10 +70,12 @@ export const reviewOperatorApplication = createServerFn({ method: "POST" })
     if (updErr) throw new Error(updErr.message);
 
     // operator_staff.active is kept in sync with application_status by the
-    // trg_operator_businesses_status_sync trigger (migration
-    // 20260718070200) -- suspension/deactivation/rejection revokes staff
-    // access immediately, and suspended -> approved reinstatement restores
-    // it, regardless of which code path changed the status.
+    // trg_operator_businesses_status_sync trigger (migration 20260718070200,
+    // refined by 20260718080000) -- suspension/deactivation/rejection
+    // revokes staff access immediately, regardless of which code path
+    // changed the status. This function can never reach suspended ->
+    // approved (see isValidAdminTransition) -- reinstatement is
+    // super_admin-only, through reinstateOperator below.
 
     const { error: reviewErr } = await supabase.from("verification_reviews").insert({
       business_id: data.business_id,
@@ -89,6 +95,98 @@ export const reviewOperatorApplication = createServerFn({ method: "POST" })
     if (auditErr) throw new Error(auditErr.message);
 
     return { ok: true, status: data.decision };
+  });
+
+const reinstateSchema = z.object({
+  business_id: z.string().uuid(),
+  reason: z.string().trim().min(10, "A written reinstatement reason is required.").max(2000),
+});
+
+/**
+ * Super-admin only: reinstate a suspended operator. Founder governance
+ * decision (docs/STAGE1_SECURITY_REMEDIATION_REPORT.md) -- an ops_admin may
+ * review and recommend but may not independently restore access, so this
+ * is a separate, more strictly gated function rather than a branch of
+ * reviewOperatorApplication (which ops_admin can call, and which can never
+ * reach suspended -> approved at all, see isValidAdminTransition).
+ */
+export const reinstateOperator = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) => reinstateSchema.parse(raw))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const role = await assertAdmin(supabase, userId);
+    if (role !== "super_admin") {
+      throw new Error("Only super_admin can reinstate a suspended operator.");
+    }
+
+    const { data: business, error: readErr } = await supabase
+      .from("operator_businesses")
+      .select("id, owner_id, application_status")
+      .eq("id", data.business_id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!business) throw new Error("Business not found");
+
+    if (!canReinstateFrom(business.application_status)) {
+      throw new Error(
+        `Cannot reinstate a business that is currently "${business.application_status}" (only suspended businesses can be reinstated).`,
+      );
+    }
+
+    const { data: staffRows, error: staffErr } = await supabase
+      .from("operator_staff")
+      .select("user_id")
+      .eq("business_id", data.business_id);
+    if (staffErr) throw new Error(staffErr.message);
+
+    const eligible = isReinstatementActorEligible({
+      actorUserId: userId,
+      businessOwnerId: business.owner_id,
+      businessStaffUserIds: (staffRows ?? []).map((r) => r.user_id),
+    });
+    if (!eligible) {
+      throw new Error(
+        "You cannot reinstate a business you own or are a staff member of. Ask another super_admin to review this case.",
+      );
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const nowIso = new Date().toISOString();
+
+    const { error: updErr } = await supabaseAdmin
+      .from("operator_businesses")
+      .update({
+        application_status: "approved",
+        reviewed_at: nowIso,
+        reviewed_by: userId,
+        review_notes: data.reason,
+      })
+      .eq("id", data.business_id);
+    if (updErr) throw new Error(updErr.message);
+
+    // trg_operator_businesses_status_sync (migration 20260718080000)
+    // reactivates only the operator_staff rows this suspension itself
+    // deactivated -- not every inactive row on the business.
+
+    const { error: reviewErr } = await supabase.from("verification_reviews").insert({
+      business_id: data.business_id,
+      reviewer_id: userId,
+      from_status: business.application_status,
+      to_status: "approved",
+      decision_note: data.reason,
+    });
+    if (reviewErr) throw new Error(reviewErr.message);
+
+    const { error: auditErr } = await supabase.rpc("log_audit_event", {
+      p_action: "operator.reinstated",
+      p_entity_type: "operator_business",
+      p_entity_id: data.business_id,
+      p_metadata: { reason: data.reason, from_status: business.application_status },
+    });
+    if (auditErr) throw new Error(auditErr.message);
+
+    return { ok: true, status: "approved" as const };
   });
 
 const customerDecisionSchema = z.object({

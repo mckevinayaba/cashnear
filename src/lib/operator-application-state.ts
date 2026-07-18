@@ -26,18 +26,29 @@ export function applicantCanEdit(current: OperatorApplicationStatus | undefined)
 }
 
 /**
- * Admin-initiated review transitions. Deliberately permissive within the
- * "review family" (submitted/under_review/info_requested/
- * site_verification_required) to keep the existing admin UI's
- * approve/reject/request-info/site-visit/suspend buttons usable from the
- * states reviewers actually encounter, while still rejecting the genuinely
- * invalid edges: nothing may be actioned from `draft` (must be submitted by
- * the applicant first), `deactivated` is terminal, and `approved` can only
- * be reached through a review state, never directly from `draft`/`rejected`/
- * `deactivated`. `suspended -> approved` (reinstatement) is intentionally
- * included and is the one edge the assessment specifically calls out as
- * "administrative reinstatement only" -- it is admin-only by construction
- * since this map is only consulted by the admin review function.
+ * Admin-initiated review transitions, via reviewOperatorApplication.
+ * Deliberately permissive within the "review family" (submitted/
+ * under_review/info_requested/site_verification_required) to keep the
+ * existing admin UI's approve/reject/request-info/site-visit/suspend
+ * buttons usable from the states reviewers actually encounter, while still
+ * rejecting the genuinely invalid edges: nothing may be actioned from
+ * `draft` (must be submitted by the applicant first), and `deactivated` is
+ * terminal.
+ *
+ * Founder governance decisions (see docs/STAGE1_SECURITY_REMEDIATION_REPORT.md):
+ * - `rejected` is terminal for the existing application record. No admin
+ *   transition is reachable from `rejected` through this function or any
+ *   other -- not back to under_review, not to approved. A future
+ *   reapplication must create a new application record (or a formally
+ *   versioned one referencing the rejected record), never reopen this one.
+ *   This remediation does not build that reapplication flow.
+ * - `suspended -> approved` (reinstatement) is deliberately NOT reachable
+ *   through this general-purpose map/function at all, for any role. Only
+ *   super_admin may reinstate, through the dedicated reinstateOperator
+ *   function (admin.functions.ts), which enforces a mandatory written
+ *   reason, an actor-eligibility check (see isReinstatementActorEligible),
+ *   and its own audit trail. reviewOperatorApplication -- callable by
+ *   ops_admin -- must never be able to independently restore access.
  */
 const ADMIN_ALLOWED_TRANSITIONS: Readonly<
   Record<OperatorApplicationStatus, readonly OperatorApplicationStatus[]>
@@ -54,8 +65,8 @@ const ADMIN_ALLOWED_TRANSITIONS: Readonly<
   info_requested: ["under_review"],
   site_verification_required: ["under_review", "approved", "rejected"],
   approved: ["suspended", "deactivated"],
-  rejected: ["under_review"],
-  suspended: ["approved", "deactivated"],
+  rejected: [],
+  suspended: ["deactivated"],
   deactivated: [],
 };
 
@@ -70,4 +81,34 @@ export function allowedAdminTransitionsFrom(
   from: OperatorApplicationStatus,
 ): readonly OperatorApplicationStatus[] {
   return ADMIN_ALLOWED_TRANSITIONS[from] ?? [];
+}
+
+/**
+ * suspended -> approved is only ever reachable through reinstateOperator,
+ * never through isValidAdminTransition/reviewOperatorApplication (see
+ * above). Kept as its own named check, not folded into the general map, so
+ * the one-edge special case stays self-documenting and independently
+ * testable.
+ */
+export function canReinstateFrom(status: OperatorApplicationStatus): boolean {
+  return status === "suspended";
+}
+
+/**
+ * The reinstating actor must not be the suspended business's owner or any
+ * current/former operator_staff member of it -- a super_admin who also
+ * happens to be a member of the business being reinstated must not be able
+ * to approve their own (or their business's) reinstatement. `staffUserIds`
+ * should include every operator_staff row for the business regardless of
+ * `active`, since the check is about relationship to the business, not
+ * current operational status.
+ */
+export function isReinstatementActorEligible(params: {
+  actorUserId: string;
+  businessOwnerId: string;
+  businessStaffUserIds: readonly string[];
+}): boolean {
+  if (params.actorUserId === params.businessOwnerId) return false;
+  if (params.businessStaffUserIds.includes(params.actorUserId)) return false;
+  return true;
 }

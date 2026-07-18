@@ -7,3 +7,4 @@
 \i 004_rls_helper_execute.sql
 \i 005_audit_log_integrity.sql
 \i 006_storage_provisioning.sql
+\i 007_operator_reinstatement_governance.sql

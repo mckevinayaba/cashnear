@@ -52,4 +52,5 @@ roles.
 | `004_rls_helper_execute.sql` | H-01 | A non-owner staff member can SELECT their business (would previously 500 with EXECUTE revoked); `super_admin` can write `pilot_configuration` |
 | `005_audit_log_integrity.sql` | H-02 | Direct `INSERT INTO audit_logs` fails for `authenticated`; `log_audit_event()` succeeds and always attributes the real caller, never a spoofed `actor_id`/`actor_role` |
 | `006_storage_provisioning.sql` | H-03 | Both buckets exist, are private, and have the expected size/MIME limits after migrations replay |
+| `007_operator_reinstatement_governance.sql` | Founder governance (reinstatement + rejection-terminal) | Reinstatement restores only the staff rows *this* suspension deactivated, not ones already inactive for an unrelated reason; a rejected business's `application_status` remains unwritable to `authenticated` regardless of target status |
 | `run_all.sql` | — | Runs all of the above in order |

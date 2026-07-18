@@ -3,6 +3,8 @@ import {
   applicantCanEdit,
   isValidAdminTransition,
   allowedAdminTransitionsFrom,
+  canReinstateFrom,
+  isReinstatementActorEligible,
   type OperatorApplicationStatus,
 } from "@/lib/operator-application-state";
 
@@ -69,8 +71,8 @@ describe("isValidAdminTransition — full 9x9 transition matrix", () => {
     info_requested: ["under_review"],
     site_verification_required: ["under_review", "approved", "rejected"],
     approved: ["suspended", "deactivated"],
-    rejected: ["under_review"],
-    suspended: ["approved", "deactivated"],
+    rejected: [],
+    suspended: ["deactivated"],
     deactivated: [],
   };
 
@@ -89,8 +91,14 @@ describe("isValidAdminTransition — full 9x9 transition matrix", () => {
   test("deactivated is terminal", () => {
     expect(allowedAdminTransitionsFrom("deactivated")).toEqual([]);
   });
-  test("suspended -> approved (reinstatement) is admin-reachable, matching the assessment's explicit requirement", () => {
-    expect(isValidAdminTransition("suspended", "approved")).toBe(true);
+  test("suspended -> approved (reinstatement) is NOT reachable through the general admin transition map -- founder decision: only reinstateOperator (super_admin-only) may do this", () => {
+    expect(isValidAdminTransition("suspended", "approved")).toBe(false);
+  });
+  test("rejected is terminal: no transition is reachable from rejected, including back to under_review", () => {
+    for (const to of ALL_STATUSES) {
+      expect(isValidAdminTransition("rejected", to)).toBe(false);
+    }
+    expect(allowedAdminTransitionsFrom("rejected")).toEqual([]);
   });
   test("an operator cannot self-approve: applicantCanEdit blocks writes before an admin transition is even relevant", () => {
     // Belt-and-suspenders: an applicant-side write is rejected long before
@@ -100,5 +108,61 @@ describe("isValidAdminTransition — full 9x9 transition matrix", () => {
         expect(applicantCanEdit(status)).toBe(false);
       }
     }
+  });
+});
+
+describe("canReinstateFrom — the one edge reinstateOperator is allowed to perform", () => {
+  for (const status of ALL_STATUSES) {
+    test(`"${status}" reinstateable: ${status === "suspended"}`, () => {
+      expect(canReinstateFrom(status)).toBe(status === "suspended");
+    });
+  }
+});
+
+describe("isReinstatementActorEligible — reinstating actor cannot be the operator or a business member", () => {
+  const owner = "11111111-1111-1111-1111-111111111111";
+  const staffMember = "22222222-2222-2222-2222-222222222222";
+  const unrelatedSuperAdmin = "33333333-3333-3333-3333-333333333333";
+
+  test("the business owner cannot reinstate their own business", () => {
+    expect(
+      isReinstatementActorEligible({
+        actorUserId: owner,
+        businessOwnerId: owner,
+        businessStaffUserIds: [owner, staffMember],
+      }),
+    ).toBe(false);
+  });
+
+  test("a current staff member of the business cannot reinstate it", () => {
+    expect(
+      isReinstatementActorEligible({
+        actorUserId: staffMember,
+        businessOwnerId: owner,
+        businessStaffUserIds: [owner, staffMember],
+      }),
+    ).toBe(false);
+  });
+
+  test("a former (inactive) staff member is still ineligible -- membership, not current active status, is what disqualifies", () => {
+    // businessStaffUserIds is expected to include every operator_staff row
+    // for the business regardless of `active`, per the caller contract.
+    expect(
+      isReinstatementActorEligible({
+        actorUserId: staffMember,
+        businessOwnerId: owner,
+        businessStaffUserIds: [owner, staffMember],
+      }),
+    ).toBe(false);
+  });
+
+  test("an unrelated super_admin with no relationship to the business is eligible", () => {
+    expect(
+      isReinstatementActorEligible({
+        actorUserId: unrelatedSuperAdmin,
+        businessOwnerId: owner,
+        businessStaffUserIds: [owner, staffMember],
+      }),
+    ).toBe(true);
   });
 });

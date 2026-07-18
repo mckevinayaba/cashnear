@@ -16,7 +16,9 @@ All 4 Critical and 3 High findings from the assessment are fixed at the database
 - `audit_logs` is now genuinely append-only: no direct `INSERT`/`UPDATE`/`DELETE` for ordinary users, only through a `SECURITY DEFINER` function that derives the actor from the real session, never a parameter.
 - Both storage buckets are now provisioned by a committed, idempotent migration, with real size/MIME limits enforced at the Storage layer.
 
-99 executed `bun test` cases prove the state-machine logic exhaustively. Six SQL regression scripts prove the RLS/trigger/audit/storage behavior — **written but not executed in this session**, because no Supabase CLI or Docker is available in this environment (verified absent). This is stated plainly, not glossed over — see §Tests below for exactly what that means for confidence level.
+113 executed `bun test` cases prove the state-machine logic exhaustively. Seven SQL regression scripts prove the RLS/trigger/audit/storage behavior — **written but not executed in this session**, because no Supabase CLI or Docker is available in this environment (verified absent). This is stated plainly, not glossed over — see §Tests below for exactly what that means for confidence level.
+
+**Post-initial-remediation update:** the founder made two governance decisions after the first pass of this report — (1) only `super_admin` may reinstate a suspended operator, through a dedicated function with a mandatory written reason and an actor-eligibility check, not the general-purpose review function `ops_admin` can call; (2) rejection is terminal, no reconsideration path. Both are now implemented; see the C-04 and "Founder decisions" sections below, which reflect the current, post-decision state, not the original draft.
 
 **The core trust boundary — "can the party being evaluated set their own outcome?" — is now enforced by the database, independent of the frontend or any single server function.** See §Stage 2 readiness for the precise, conditioned verdict.
 
@@ -58,11 +60,13 @@ All 4 Critical and 3 High findings from the assessment are fixed at the database
 
 - **Original vulnerability:** `reviewOperatorApplication` only wrote `operator_businesses`; nothing deactivated staff or blocked operational actions.
 - **Root cause:** no code path tied `application_status` to `operator_staff.active` or to any write-permission check.
-- **Fix implemented:** **Model A** (roles stay historical; effective access enforced via `operator_staff.active` + `application_status`) — see rationale below. `trg_operator_businesses_status_sync` trigger deactivates staff on `suspended`/`deactivated`/`rejected`, reactivates on `suspended → approved`. One-time backfill for any business already in one of those states. `operator_documents` INSERT/DELETE policies gained a `NOT IN ('suspended','deactivated')` condition on the owning business.
+- **Fix implemented:** **Model A** (roles stay historical; effective access enforced via `operator_staff.active` + `application_status`) — see rationale below. `trg_operator_businesses_status_sync` trigger deactivates staff on `suspended`/`deactivated`/`rejected`. One-time backfill for any business already in one of those states. `operator_documents` INSERT/DELETE policies gained a `NOT IN ('suspended','deactivated')` condition on the owning business.
 - **Files/migrations:** `supabase/migrations/20260718070200_operator_suspension_enforcement.sql`.
-- **Test added:** `supabase/tests/003_operator_suspension.sql` (not executed); admin-transition-matrix tests in `operator-application-state.test.ts` (executed) prove `suspended → approved` is admin-reachable and everything else from `suspended` is not except `deactivated`.
-- **Test result:** state-machine portion executed and passing; the trigger/RLS portion is not executed (SQL script only).
-- **Remaining risk:** **medium, pending SQL execution.** The trigger logic is straightforward (single `UPDATE ... WHERE business_id = NEW.id`) and was read back carefully, but a trigger is exactly the kind of thing that should be proven to actually fire before being trusted — this is the single highest-priority item to run once local Supabase tooling is available.
+- **Governance update (post-initial-remediation):** the founder decided reinstatement (`suspended → approved`) requires `super_admin` specifically — an `ops_admin` may review and recommend but not independently restore access. `isValidAdminTransition` (the map `reviewOperatorApplication` consults) no longer includes `suspended → approved` at all, for any role; that transition is now reachable **only** through a new dedicated function, `reinstateOperator` (`src/lib/admin.functions.ts`), which: requires `role === 'super_admin'` (checked before anything else); requires a written reason (`z.string().trim().min(10)`, stored in both `review_notes` and the `verification_reviews`/audit-log trail); rejects the call if the acting super_admin is the business's owner or appears in its `operator_staff` (`isReinstatementActorEligible`, checked against a fresh read of both, not cached); and writes through the same service-role/audit path as every other decision. The trigger itself was also refined: `operator_staff.deactivated_by_suspension_at` (new column, migration `20260718080000`) records exactly which staff rows a given suspension deactivated, and reinstatement reactivates only those — a staff member who was already inactive for an unrelated reason before the suspension stays inactive, satisfying "previously deactivated staff are not all automatically reactivated without an explicit rule."
+- **Files/migrations (governance update):** `supabase/migrations/20260718080000_operator_reinstatement_governance.sql`; `src/lib/operator-application-state.ts` (`canReinstateFrom`, `isReinstatementActorEligible`, updated `ADMIN_ALLOWED_TRANSITIONS`); `src/lib/admin.functions.ts` (`reinstateOperator`).
+- **Test added:** `supabase/tests/003_operator_suspension.sql` and `supabase/tests/007_operator_reinstatement_governance.sql` (not executed); admin-transition-matrix tests in `operator-application-state.test.ts` (executed) now prove `suspended → approved` is **not** reachable through the general map for any role, `canReinstateFrom`/`isReinstatementActorEligible` are covered directly (executed, passing).
+- **Test result:** state-machine and actor-eligibility logic executed and passing (113/113, see Tests). The trigger/RLS portion (staff reactivation, document-policy status gate, rejected-is-unwritable) is not executed — SQL scripts only.
+- **Remaining risk:** **medium, pending SQL execution**, same as the original assessment of this finding — a trigger and a column-grant lockdown are exactly the kind of thing that should be proven to actually fire/hold before being trusted in production, and that proof is still outstanding in this environment.
 
 ### H-01 — RLS helper EXECUTE grants
 
@@ -99,7 +103,7 @@ All 4 Critical and 3 High findings from the assessment are fixed at the database
 
 ## Database changes
 
-**New migrations (6, in application order):**
+**New migrations (7, in application order):**
 
 | File | Purpose |
 |---|---|
@@ -109,6 +113,7 @@ All 4 Critical and 3 High findings from the assessment are fixed at the database
 | `20260718070300_rls_helper_execute_grants.sql` | H-01: re-grant EXECUTE on the three RLS helper functions |
 | `20260718070400_audit_log_lockdown.sql` | H-02: revoke direct INSERT, add `log_audit_event()` |
 | `20260718070500_storage_bucket_provisioning.sql` | H-03: create both storage buckets with limits |
+| `20260718080000_operator_reinstatement_governance.sql` | Founder governance: `operator_staff.deactivated_by_suspension_at` + refined trigger so reinstatement restores only suspension-caused deactivations |
 
 **Policy changes:** `operator_documents` INSERT/DELETE gained a business-status condition (migration 070200). `audit_logs` lost its `authenticated` INSERT policy (070400). No existing policy was dropped without replacement except that one (deliberately — it's superseded by `log_audit_event`).
 
@@ -139,6 +144,12 @@ Three layers:
 2. **State-machine layer:** `upsertOperatorApplication` (the applicant's own function) refuses to write anything once the business has left `draft`/`info_requested`, closing the self-reinstatement path even for someone who already has legitimate access to that function.
 3. **Server-function admin layer:** `reviewOperatorApplication` validates the transition itself is legal (`isValidAdminTransition`) before writing, so even a compromised or buggy admin caller can't jump straight from `draft` to `approved`.
 
+## Rejected operator applications — why rejection is terminal
+
+Founder decision (applied after the initial remediation pass): a rejected application may not be edited, resubmitted, overwritten, or transitioned back to `submitted`/`under_review`/`approved`. This was already mostly true from the initial C-03 fix (`applicantCanEdit` never included `rejected` in the applicant-editable set, so the applicant's own function already refused to touch it), but the initial `ADMIN_ALLOWED_TRANSITIONS` map included `rejected: ["under_review"]` as a deliberate "allow reconsideration" judgment call, documented at the time as exactly that — a judgment call, not a requirement. The founder has now overridden it: `rejected` is `[]` in the map, identical to `deactivated`. No admin transition is reachable from `rejected` through `reviewOperatorApplication`, `reinstateOperator`, or any other path — and the column-level lockdown from C-02 means `application_status` isn't writable to `authenticated` at all regardless, so this is enforced at both the transition-logic layer and the data layer.
+
+**Future reapplication (explicitly not built in this remediation):** a rejected applicant who wants to try again must get a **new** application record — either a fresh row, or a formally versioned one that references the rejected record by ID and preserves its complete `verification_reviews`/`audit_logs` trail. This remediation does not implement that flow; it only guarantees the rejected record itself can never be silently reopened. Building the actual reapplication mechanism (new-record creation, linking/versioning, what happens to old uploaded documents) is a Stage 2-adjacent product decision, out of scope here by the founder's own instruction.
+
 ## Suspension — how suspended owners and staff lose effective access
 
 **Chosen model: Model A** (roles stay historical, effective access enforced via status). Why: `operator_staff.active` already existed in the schema for exactly this purpose; Model A requires touching fewer tables than re-granting/re-inserting `user_roles` rows on reinstatement (Model B); and it keeps `user_roles` meaning "has ever held this capability" rather than conflating it with "is currently entitled," which is the cleaner long-term invariant for an audit trail.
@@ -146,6 +157,8 @@ Three layers:
 Mechanically: a database trigger (`trg_operator_businesses_status_sync`) — not application code — flips `operator_staff.active` to `false` the moment `application_status` enters `suspended`/`deactivated`/`rejected`, and back to `true` on `suspended → approved`. Because this is DB-level, it holds regardless of which code path changes the status, including a future one that doesn't go through `reviewOperatorApplication`. Staff (non-owner) RLS access to the business/staff/document tables depends on `operator_staff.active = true` via `is_business_member`, so access is cut immediately, not eventually. The owner's own read access is deliberately preserved (so they can see "you are suspended"), but their one operational write in Stage 1 — document upload/delete — is blocked by an explicit status condition on those two policies.
 
 **Scope limit, stated plainly:** Stage 1 has no other operational endpoints yet (no cash requests, no matching). This fix establishes the enforcement pattern (status + active-membership gate); it does not yet gate functionality that doesn't exist. Any Stage 2 operational server function must extend the same pattern, not invent a new one.
+
+**Reinstatement governance (founder decision, applied after the initial remediation pass):** `suspended → approved` is `super_admin`-only, via `reinstateOperator`, never via the general `reviewOperatorApplication` an `ops_admin` can call. Three additional guarantees, all enforced in the function before any write happens: a written reason is mandatory (minimum 10 characters — a floor against "ok"-style non-answers, not a strong content guarantee); the reinstating `super_admin` cannot be the business's own owner or any current/former `operator_staff` row on it (`isReinstatementActorEligible`, checked against a live read of both at call time); and reactivation is scoped to exactly the staff rows the *triggering suspension event* deactivated (`operator_staff.deactivated_by_suspension_at`), not every inactive row on the business — a cashier removed for unrelated reasons before the suspension stays removed after reinstatement, requiring a separate, explicit staff action to restore (no such action exists yet in Stage 1, which is correct: nothing should silently restore it).
 
 ## RLS helpers — execute permissions, security mode, safe search path
 
@@ -165,8 +178,8 @@ Only `log_audit_event()` may write to `audit_logs` (direct `INSERT` is revoked f
 
 ### Tests added
 
-- `src/lib/__tests__/operator-application-state.test.ts` — 99 cases (bun:test).
-- `supabase/tests/001_customer_kyc_lockdown.sql` through `006_storage_provisioning.sql`, plus `_helpers.sql` and `run_all.sql` — 6 SQL regression scripts + shared fixtures.
+- `src/lib/__tests__/operator-application-state.test.ts` — 113 cases (bun:test), including 14 added for the founder governance decisions (`canReinstateFrom` × 9 statuses, `isReinstatementActorEligible` × 4 scenarios, rejected-is-terminal, updated reinstatement-not-reachable assertion).
+- `supabase/tests/001_customer_kyc_lockdown.sql` through `007_operator_reinstatement_governance.sql`, plus `_helpers.sql` and `run_all.sql` — 7 SQL regression scripts + shared fixtures.
 
 ### Tests executed
 
@@ -176,17 +189,19 @@ Only `log_audit_event()` may write to `audit_logs` (direct `INSERT` is revoked f
 
 ```
 bun test v1.3.14
- 99 pass
+ 113 pass
  0 fail
- 105 expect() calls
-Ran 99 tests across 1 file. [~40-55ms]
+ 128 expect() calls
+Ran 113 tests across 1 file. [~40-220ms]
 ```
 
-Every one of the 9 `operator_application_status` enum values checked against `applicantCanEdit` (the C-03 fix), and the full 9×9 admin-transition matrix checked against an independently-declared expected-result table (not the source map echoed back at itself) for `isValidAdminTransition` (the C-04/admin-transition-validity fix).
+Every one of the 9 `operator_application_status` enum values checked against `applicantCanEdit` (the C-03 fix) and `canReinstateFrom` (the reinstatement-governance fix); the full 9×9 admin-transition matrix checked against an independently-declared expected-result table (not the source map echoed back at itself) for `isValidAdminTransition`, now confirming `suspended → approved` is unreachable through it and `rejected` has zero reachable transitions; `isReinstatementActorEligible` checked against owner/current-staff/former-staff/unrelated-actor scenarios.
 
 ### Tests not executable, and why
 
-All 6 SQL scripts under `supabase/tests/`. **Reason:** this environment has no Supabase CLI and no Docker (`supabase --version` and `docker --version` both fail — checked directly, not assumed). These scripts require a live Postgres instance with the full migration set applied and role-impersonation (`SET LOCAL ROLE authenticated` + JWT-claim GUCs) to simulate different users, none of which is available here. **They are not simulated, described-as-passing, or otherwise represented as verified anywhere in this report or its commits — they are explicitly labeled not-executed everywhere they're mentioned.**
+All 7 SQL scripts under `supabase/tests/`. **Reason:** this environment has no Supabase CLI and no Docker (`supabase --version` and `docker --version` both fail — checked directly, not assumed). These scripts require a live Postgres instance with the full migration set applied and role-impersonation (`SET LOCAL ROLE authenticated` + JWT-claim GUCs) to simulate different users, none of which is available here. **They are not simulated, described-as-passing, or otherwise represented as verified anywhere in this report or its commits — they are explicitly labeled not-executed everywhere they're mentioned.**
+
+The `reinstateOperator` function's actor-eligibility and mandatory-reason checks are covered directly by executed tests only at the pure-logic level (`isReinstatementActorEligible`); the full function (DB reads of `operator_staff`, the service-role write, the audit/review-history inserts) is covered only by `007_operator_reinstatement_governance.sql` (not executed), for the same reason `createServerFn`-wrapped handlers weren't unit-tested elsewhere in this remediation — see the original report's note on this below.
 
 I also did not attempt to unit-test the `createServerFn`-wrapped handlers (`reviewOperatorApplication`, `upsertOperatorApplication`, `reviewCustomerVerification`, `grantUserRole`, `submitCustomerVerification`) directly, because convincingly mocking TanStack Start's server-function runtime (request context, `requireSupabaseAuth`'s JWT verification via a real Supabase client) was judged higher-risk-of-a-misleading-test than valuable given the time available — a shallow mock could pass without proving anything real. The pure logic these handlers depend on (`applicantCanEdit`, `isValidAdminTransition`) is fully covered instead; the I/O plumbing around it is covered only by the (unexecuted) SQL scripts and by `bunx tsc --noEmit` passing.
 
@@ -236,12 +251,16 @@ None of these are silently omitted — this list is the complete set of everythi
 
 ## Founder decisions required
 
-Only genuine product/governance calls, not implementation details:
+**Resolved since the initial draft of this report:**
 
-- **Reinstatement authority:** this remediation implements `suspended → approved` as reachable by any `ops_admin`/`super_admin` (same authority as other review decisions). If reinstatement should require a higher bar (e.g., `super_admin` only, or a second approver), that's a governance decision not implemented here — the current code treats it identically to any other review transition.
-- **Rejected → under_review reconsideration:** this remediation's admin transition map allows an admin to move a `rejected` application back to `under_review` (a reasonable "reconsider" path, my own judgment call documented in the remediation plan). If rejection should be terminal instead, that's worth an explicit product decision.
+- ~~Reinstatement authority~~ — **decided:** `super_admin` only, `ops_admin` may review/recommend but not restore access. Implemented via the dedicated `reinstateOperator` function (see C-04 above).
+- ~~Rejected → under_review reconsideration~~ — **decided:** rejection is terminal, no reconsideration path. The initial remediation's `rejected: ["under_review"]` entry (explicitly flagged at the time as a judgment call, not a requirement) is removed. A future reapplication must create a new/versioned application record referencing the rejected one — not implemented in this remediation, by explicit instruction.
+
+**Still open:**
+
 - **RPC role-probing hardening (H-01 residual risk):** whether to invest in the schema-separation fix (moving `has_role`/`is_admin`/`is_business_member` out of the API-exposed schema) is a prioritization call, not something blocking Stage 2 on its own.
 - **Live-project verification:** someone with actual Supabase dashboard/CLI access to the Lovable Cloud project needs to run the SQL test suite and confirm current bucket settings and any existing suspended/rejected records — this isn't a "decision" so much as a required action item, but it needs an owner.
+- **Reapplication mechanism design:** now that rejection is confirmed terminal, the founder/product owner needs to decide the shape of the "new application record referencing the rejected one" flow (fresh row vs. formal versioning, what happens to previously uploaded documents, whether the rejected record's data can be pre-filled into the new one) — explicitly not designed or implemented here, flagged for whenever reapplication becomes a real product priority (Stage 2-adjacent, not Stage 2 itself).
 
 ---
 
@@ -254,10 +273,11 @@ The trust boundary this remediation targeted — can the party being evaluated s
 **Conditions before Stage 2 work actually begins:**
 
 1. **Run the 6 SQL test scripts** against a real Supabase instance (`supabase start && supabase db reset`, then `supabase/tests/run_all.sql`) and confirm all pass. This remediation's RLS/trigger/storage claims are well-reasoned from reading the SQL directly, but "well-reasoned" is not "proven" — and Stage 2 is exactly the point at which these mechanisms need to be load-bearing for real.
-2. **Verify against the live Lovable Cloud project specifically**, not just a fresh local instance — confirm current bucket configuration, confirm whether any accounts are currently in a suspended/rejected state that the backfill needs to correct, and confirm the H-01 EXECUTE grant was in fact causing the predicted failures (or wasn't — either way, closing the uncertainty).
-3. Resolve the founder decisions above (reinstatement authority, rejection terminality) before Stage 2 builds anything that assumes a specific answer.
+2. **Verify against the live Lovable Cloud project specifically**, not just a fresh local instance — confirm current bucket configuration, confirm whether any accounts are currently in a suspended/rejected state that the backfill needs to correct (including whether any `operator_staff` rows need the new `deactivated_by_suspension_at` backfill to reflect reality), and confirm the H-01 EXECUTE grant was in fact causing the predicted failures (or wasn't — either way, closing the uncertainty).
 
-None of these three conditions require further code changes to this remediation — they're verification and decision steps. If all three come back clean (tests pass, live project matches expectations, decisions made), this codebase's identity/verification layer is a sound foundation for Stage 2 to build on.
+~~3. Resolve the founder decisions above~~ — **done**: reinstatement authority (`super_admin`-only, dedicated function) and rejection terminality are both decided and implemented as of this report's latest revision.
+
+Both remaining conditions are verification steps, not further code changes. If they come back clean (tests pass, live project matches expectations), this codebase's identity/verification layer is a sound foundation for Stage 2 to build on.
 
 ---
 
@@ -279,7 +299,9 @@ None of these three conditions require further code changes to this remediation 
 | `fe32fcd` | test: add stage 1 access-control regression coverage |
 | `7db4bcb` | chore: normalise repository line endings |
 | `5d49b46` | chore: fix lint/typecheck tooling for the new test suite |
+| `78155cc` | docs: add stage 1 remediation report (initial draft) |
+| *(pending)* | security: apply founder governance decisions on reinstatement and rejection — commit made immediately after this report update; see the branch log for its final SHA |
 
-- **Migrations added:** 6 (`20260718070000` through `20260718070500`, see Database changes above)
-- **Files changed (non-doc):** `.gitattributes` (new), `tsconfig.json`, `tsconfig.test.json` (new), `package.json`, `src/hooks/use-auth.ts`, `src/integrations/supabase/types.ts`, `src/lib/admin.functions.ts`, `src/lib/customer.functions.ts`, `src/lib/operators.functions.ts`, `src/lib/operator-application-state.ts` (new), `src/lib/__tests__/operator-application-state.test.ts` (new), `supabase/migrations/*` (6 new), `supabase/tests/*` (9 new files), `bun.lock`
+- **Migrations added:** 7 (`20260718070000` through `20260718080000`, see Database changes above)
+- **Files changed (non-doc):** `.gitattributes` (new), `tsconfig.json`, `tsconfig.test.json` (new), `package.json`, `src/hooks/use-auth.ts`, `src/integrations/supabase/types.ts`, `src/lib/admin.functions.ts`, `src/lib/customer.functions.ts`, `src/lib/operators.functions.ts`, `src/lib/operator-application-state.ts` (new), `src/lib/__tests__/operator-application-state.test.ts` (new), `supabase/migrations/*` (7 new), `supabase/tests/*` (11 new files), `bun.lock`
 - **Not pushed, not merged**, per instructions.
