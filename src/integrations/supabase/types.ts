@@ -49,25 +49,58 @@ export type Database = {
       }
       customer_profiles: {
         Row: {
+          consent_accepted_at: string | null
           created_at: string
+          full_legal_name: string | null
+          id_document_number: string | null
+          id_document_path: string | null
+          id_document_type: string | null
+          mobile_number: string | null
           notes: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           saved_suburb: string | null
+          selfie_path: string | null
+          submitted_at: string | null
           updated_at: string
           user_id: string
           verification_status: Database["public"]["Enums"]["verification_status"]
         }
         Insert: {
+          consent_accepted_at?: string | null
           created_at?: string
+          full_legal_name?: string | null
+          id_document_number?: string | null
+          id_document_path?: string | null
+          id_document_type?: string | null
+          mobile_number?: string | null
           notes?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           saved_suburb?: string | null
+          selfie_path?: string | null
+          submitted_at?: string | null
           updated_at?: string
           user_id: string
           verification_status?: Database["public"]["Enums"]["verification_status"]
         }
         Update: {
+          consent_accepted_at?: string | null
           created_at?: string
+          full_legal_name?: string | null
+          id_document_number?: string | null
+          id_document_path?: string | null
+          id_document_type?: string | null
+          mobile_number?: string | null
           notes?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           saved_suburb?: string | null
+          selfie_path?: string | null
+          submitted_at?: string | null
           updated_at?: string
           user_id?: string
           verification_status?: Database["public"]["Enums"]["verification_status"]
