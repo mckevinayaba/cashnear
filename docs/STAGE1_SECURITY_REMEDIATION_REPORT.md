@@ -207,12 +207,13 @@ I also did not attempt to unit-test the `createServerFn`-wrapped handlers (`revi
 
 ### Manual verification still required
 
-Before this can be treated as fully proven, someone with Supabase CLI/Docker access must:
+Before this can be treated as fully proven, someone with Supabase CLI/Docker access must run `bun run test:db` (or the manual steps in `docs/SUPABASE_SECURITY_TESTING.md`, added specifically for this purpose):
 
-1. `supabase start && supabase db reset`
-2. `psql "$DB_URL" -f supabase/tests/run_all.sql` (or run each file individually per `supabase/tests/README.md`)
-3. Confirm every script reports only `NOTICE: PASS - ...` lines and none raise `ERROR: FAIL - ...`
-4. Separately, inspect the **live** Lovable Cloud project directly (I had no credentials to do this) to confirm: (a) whether H-01's EXECUTE revoke was actually causing errors in practice, (b) the live storage buckets' current public/private and size-limit settings before this migration applies, (c) whether any operator/customer records currently exist in `suspended`/`rejected`/`deactivated` states that the C-04 backfill needs to correct.
+1. `supabase start` then `bun run test:db` (wraps `supabase db reset` + running all 7 scripts with `ON_ERROR_STOP=1`)
+2. Confirm every script reports only `NOTICE: PASS - ...` lines and none raise `ERROR: FAIL - ...`
+3. Separately, inspect the **live** Lovable Cloud project directly (I had no credentials to do this) to confirm: (a) whether H-01's EXECUTE revoke was actually causing errors in practice, (b) the live storage buckets' current public/private and size-limit settings before this migration applies, (c) whether any operator/customer records currently exist in `suspended`/`rejected`/`deactivated` states that the C-04 backfill needs to correct — `docs/SUPABASE_SECURITY_TESTING.md` §12 covers this as a deliberately manual, non-automated procedure, read-only inspection first.
+
+As of the most recent commits on this branch, the SQL scripts themselves also got a correctness pass: re-reading them for this report's own accuracy caught two latent bugs (`003_operator_suspension.sql`, `005_audit_log_integrity.sql`) where a broad exception handler could have swallowed the script's own failure signal and reported a false PASS — fixed, but still unexecuted. This is disclosed, not hidden, because it's a real illustration of why "written but not executed" is a meaningfully weaker claim than "passing."
 
 ---
 
@@ -225,9 +226,9 @@ Before this can be treated as fully proven, someone with Supabase CLI/Docker acc
 | `bun run typecheck` (`tsc --noEmit` + `tsc --noEmit -p tsconfig.test.json`) | ✅ Zero errors, both configs |
 | `bun run build` | ✅ Succeeds (Cloudflare Workers/Nitro output, as before) |
 | `bun audit` | 4 vulnerabilities (2 moderate, 2 low) — **identical to the pre-remediation baseline**, all transitive dev-tooling (`@babel/core`, `brace-expansion`, `esbuild`, `js-yaml`), none reachable from the runtime bundle, none introduced by `@types/bun` |
-| Migration test (`supabase db reset`) | **Not run** — no Supabase CLI/Docker available; migrations were reviewed by hand for syntax and ordering, not executed |
+| Migration test (`supabase db reset`) | **Not run** — no Supabase CLI/Docker available in any environment this remediation was authored in; migrations were reviewed by hand for syntax and ordering, not executed. `docs/SUPABASE_SECURITY_TESTING.md` + `bun run test:db` are the prepared, not-yet-run path for whoever has that tooling |
 | Security tests (SQL) | **Not run** — see Tests above |
-| Security tests (bun:test) | ✅ 99/99 passing |
+| Security tests (bun:test) | ✅ 113/113 passing (grew from 99 as the founder governance decisions added coverage) |
 
 **Lint detail:** after adding `.gitattributes` (L-03 from the original assessment) and forcing a real working-tree re-checkout (`git reset --hard HEAD` once `.gitattributes` was committed — confirmed via `grep -c $'\r'` that on-disk files are genuinely LF now, not just staged-as-LF), `bun run lint` dropped from **9,086 problems to 172**. All 172 remaining problems are in files this remediation did not touch (`src/components/ds/*`, `src/components/ui/*`, `src/integrations/supabase/client*.ts`, `src/routes/*` outside what's listed below) — pre-existing Prettier formatting debt in the original Lovable-generated code, unrelated to CRLF and unrelated to this remediation's scope. **Every file this remediation created or modified is 100% lint-clean** (verified by scoped `eslint` runs against exactly those files): `src/lib/admin.functions.ts`, `src/lib/customer.functions.ts`, `src/lib/operators.functions.ts`, `src/lib/operator-application-state.ts`, `src/hooks/use-auth.ts`, `src/integrations/supabase/types.ts`, `src/lib/__tests__/operator-application-state.test.ts`. No broad ESLint-disable rule was used anywhere to achieve this. The 172 remaining problems are reported here, not silently fixed with a repo-wide `--fix` (which the task explicitly asked to avoid as an unnecessary mass diff) and not hidden.
 
@@ -272,7 +273,7 @@ The trust boundary this remediation targeted — can the party being evaluated s
 
 **Conditions before Stage 2 work actually begins:**
 
-1. **Run the 6 SQL test scripts** against a real Supabase instance (`supabase start && supabase db reset`, then `supabase/tests/run_all.sql`) and confirm all pass. This remediation's RLS/trigger/storage claims are well-reasoned from reading the SQL directly, but "well-reasoned" is not "proven" — and Stage 2 is exactly the point at which these mechanisms need to be load-bearing for real.
+1. **Run the 7 SQL test scripts** against a real Supabase instance — `docs/SUPABASE_SECURITY_TESTING.md` and `bun run test:db` (`supabase/tests/run.sh`) now cover exactly this, added after this report's initial draft — and confirm all pass. This remediation's RLS/trigger/storage claims are well-reasoned from reading the SQL directly (including two exception-handling bugs in the scripts themselves, found and fixed by re-reading them — see git history), but "well-reasoned" is not "proven" — and Stage 2 is exactly the point at which these mechanisms need to be load-bearing for real.
 2. **Verify against the live Lovable Cloud project specifically**, not just a fresh local instance — confirm current bucket configuration, confirm whether any accounts are currently in a suspended/rejected state that the backfill needs to correct (including whether any `operator_staff` rows need the new `deactivated_by_suspension_at` backfill to reflect reality), and confirm the H-01 EXECUTE grant was in fact causing the predicted failures (or wasn't — either way, closing the uncertainty).
 
 ~~3. Resolve the founder decisions above~~ — **done**: reinstatement authority (`super_admin`-only, dedicated function) and rejection terminality are both decided and implemented as of this report's latest revision.
@@ -301,7 +302,10 @@ Both remaining conditions are verification steps, not further code changes. If t
 | `5d49b46` | chore: fix lint/typecheck tooling for the new test suite |
 | `78155cc` | docs: add stage 1 remediation report (initial draft) |
 | `6372dfb` | security: apply founder governance decisions on reinstatement and rejection |
+| `f71190c` | docs: record the governance-decisions commit SHA in the report |
+| `741a6c1` | test: fix exception-handling bugs in the SQL security test suite |
+| `25c3693` | docs: add Supabase security testing guide and safe local runner |
 
 - **Migrations added:** 7 (`20260718070000` through `20260718080000`, see Database changes above)
-- **Files changed (non-doc):** `.gitattributes` (new), `tsconfig.json`, `tsconfig.test.json` (new), `package.json`, `src/hooks/use-auth.ts`, `src/integrations/supabase/types.ts`, `src/lib/admin.functions.ts`, `src/lib/customer.functions.ts`, `src/lib/operators.functions.ts`, `src/lib/operator-application-state.ts` (new), `src/lib/__tests__/operator-application-state.test.ts` (new), `supabase/migrations/*` (7 new), `supabase/tests/*` (11 new files), `bun.lock`
+- **Files changed (non-doc):** `.gitattributes` (new), `tsconfig.json`, `tsconfig.test.json` (new), `package.json`, `src/hooks/use-auth.ts`, `src/integrations/supabase/types.ts`, `src/lib/admin.functions.ts`, `src/lib/customer.functions.ts`, `src/lib/operators.functions.ts`, `src/lib/operator-application-state.ts` (new), `src/lib/__tests__/operator-application-state.test.ts` (new), `supabase/migrations/*` (7 new), `supabase/tests/*` (11 files: 7 test scripts + `_helpers.sql` + `README.md` + `run_all.sql` + `run.sh`), `bun.lock`
 - **Not pushed, not merged**, per instructions.
