@@ -15,6 +15,14 @@ export interface AuthState {
 /**
  * useAuth — reactive Supabase session + role cache.
  * Roles are read from `public.user_roles` (RLS scopes to the caller).
+ *
+ * `isOperator` reflects role possession only (used for client-side routing
+ * convenience) -- it does NOT mean the operator's business is approved or
+ * currently active. Never gate a security-relevant decision on `isOperator`
+ * alone; effective operator access additionally depends on
+ * `operator_businesses.application_status` and `operator_staff.active`,
+ * enforced at the RLS/server layer (see is_business_member and
+ * trg_operator_businesses_status_sync).
  */
 export function useAuth(): AuthState & {
   hasRole: (r: AppRole) => boolean;

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isValidAdminTransition } from "@/lib/operator-application-state";
 
 const decisionSchema = z.object({
   business_id: z.string().uuid(),
@@ -45,6 +46,12 @@ export const reviewOperatorApplication = createServerFn({ method: "POST" })
     if (readErr) throw new Error(readErr.message);
     if (!current) throw new Error("Business not found");
 
+    if (!isValidAdminTransition(current.application_status, data.decision)) {
+      throw new Error(
+        `Cannot move an application from "${current.application_status}" to "${data.decision}".`,
+      );
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const nowIso = new Date().toISOString();
 
@@ -59,22 +66,79 @@ export const reviewOperatorApplication = createServerFn({ method: "POST" })
       .eq("id", data.business_id);
     if (updErr) throw new Error(updErr.message);
 
-    await supabase.from("verification_reviews").insert({
+    // operator_staff.active is kept in sync with application_status by the
+    // trg_operator_businesses_status_sync trigger (migration
+    // 20260718070200) -- suspension/deactivation/rejection revokes staff
+    // access immediately, and suspended -> approved reinstatement restores
+    // it, regardless of which code path changed the status.
+
+    const { error: reviewErr } = await supabase.from("verification_reviews").insert({
       business_id: data.business_id,
       reviewer_id: userId,
       from_status: current.application_status,
       to_status: data.decision,
       decision_note: data.note || null,
     });
+    if (reviewErr) throw new Error(reviewErr.message);
 
-    await supabase.from("audit_logs").insert({
-      actor_id: userId,
-      actor_role: role,
-      action: `operator.review.${data.decision}`,
-      entity_type: "operator_business",
-      entity_id: data.business_id,
-      metadata: { note: data.note ?? null },
+    const { error: auditErr } = await supabase.rpc("log_audit_event", {
+      p_action: `operator.review.${data.decision}`,
+      p_entity_type: "operator_business",
+      p_entity_id: data.business_id,
+      p_metadata: { note: data.note ?? null, from_status: current.application_status },
     });
+    if (auditErr) throw new Error(auditErr.message);
+
+    return { ok: true, status: data.decision };
+  });
+
+const customerDecisionSchema = z.object({
+  customer_user_id: z.string().uuid(),
+  decision: z.enum(["approved", "rejected", "suspended", "pending"]),
+  note: z.string().trim().max(2000).optional().or(z.literal("")),
+});
+
+/**
+ * Admin: record a KYC verification decision on a customer profile. This is
+ * the only path (besides submitCustomerVerification, which only ever sets
+ * "pending") that may write customer_profiles.verification_status /
+ * reviewed_at / reviewed_by / review_notes -- migration
+ * 20260718070000 revokes direct column UPDATE on these for `authenticated`.
+ */
+export const reviewCustomerVerification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) => customerDecisionSchema.parse(raw))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const role = await assertAdmin(supabase, userId);
+
+    const { data: current, error: readErr } = await supabase
+      .from("customer_profiles")
+      .select("user_id, verification_status")
+      .eq("user_id", data.customer_user_id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!current) throw new Error("Customer profile not found");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: updErr } = await supabaseAdmin
+      .from("customer_profiles")
+      .update({
+        verification_status: data.decision,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: userId,
+        review_notes: data.note || null,
+      })
+      .eq("user_id", data.customer_user_id);
+    if (updErr) throw new Error(updErr.message);
+
+    const { error: auditErr } = await supabase.rpc("log_audit_event", {
+      p_action: `customer.verification.${data.decision}`,
+      p_entity_type: "customer_profile",
+      p_entity_id: data.customer_user_id,
+      p_metadata: { note: data.note ?? null, from_status: current.verification_status, reviewer_role: role },
+    });
+    if (auditErr) throw new Error(auditErr.message);
 
     return { ok: true, status: data.decision };
   });
@@ -102,14 +166,13 @@ export const grantUserRole = createServerFn({ method: "POST" })
       );
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_logs").insert({
-      actor_id: userId,
-      actor_role: "super_admin",
-      action: "role.granted",
-      entity_type: "user",
-      entity_id: data.target_user_id,
-      metadata: { role: data.role },
+    const { error: auditErr } = await supabase.rpc("log_audit_event", {
+      p_action: "role.granted",
+      p_entity_type: "user",
+      p_entity_id: data.target_user_id,
+      p_metadata: { role: data.role },
     });
+    if (auditErr) throw new Error(auditErr.message);
 
     return { ok: true };
   });
