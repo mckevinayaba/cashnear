@@ -23,7 +23,14 @@ export const submitCustomerVerification = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const nowIso = new Date().toISOString();
 
-    const { error } = await supabase
+    // verification_status (and the identity fields alongside it) are
+    // admin/service-role only columns as of migration 20260718070000 --
+    // authenticated no longer has direct column UPDATE on them. This write
+    // always sets "pending", never an attacker-controlled value; routing it
+    // through the service role is what actually makes that column
+    // writable at all now, consistent with the DB-level lockdown.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("customer_profiles")
       .upsert(
         {
@@ -42,14 +49,13 @@ export const submitCustomerVerification = createServerFn({ method: "POST" })
       );
     if (error) throw new Error(error.message);
 
-    await supabase.from("audit_logs").insert({
-      actor_id: userId,
-      actor_role: "customer",
-      action: "customer.verification.submitted",
-      entity_type: "customer_profile",
-      entity_id: userId,
-      metadata: { id_document_type: data.id_document_type },
+    const { error: auditErr } = await supabase.rpc("log_audit_event", {
+      p_action: "customer.verification.submitted",
+      p_entity_type: "customer_profile",
+      p_entity_id: userId,
+      p_metadata: { id_document_type: data.id_document_type },
     });
+    if (auditErr) throw new Error(auditErr.message);
 
     return { ok: true };
   });
