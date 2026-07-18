@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { applicantCanEdit } from "@/lib/operator-application-state";
 
 const applicationSchema = z.object({
   business_id: z.string().uuid().optional(),
@@ -54,7 +55,15 @@ export const upsertOperatorApplication = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { submit, agreements_accepted, business_id, ...fields } = data;
 
-    const record = {
+    // Applicant-editable business content only. application_status,
+    // submitted_at, reviewed_at, reviewed_by, review_notes are excluded here
+    // by design -- migration 20260718070100 revokes column-level UPDATE on
+    // them for `authenticated`, so a raw table write to these columns fails
+    // at the database layer regardless of what this function does. The
+    // status transition itself is handled separately below, through the
+    // service-role client, only after validating it against the current
+    // state (C-03).
+    const contentFields = {
       owner_id: userId,
       legal_name: fields.legal_name,
       trading_name: fields.trading_name,
@@ -77,30 +86,62 @@ export const upsertOperatorApplication = createServerFn({ method: "POST" })
       representative_email: fields.representative_email,
       representative_relationship: fields.representative_relationship || null,
       agreements_accepted_at: agreements_accepted ? new Date().toISOString() : null,
-      application_status: submit ? ("submitted" as const) : ("draft" as const),
-      submitted_at: submit ? new Date().toISOString() : null,
     };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     let businessId = business_id;
     if (businessId) {
+      // Ownership-checked read of current status before allowing any write.
+      // RLS additionally scopes this to the caller's own business; a
+      // business_id belonging to another operator returns no row here, so
+      // "change another operator's application" fails before any write is
+      // attempted, not just at the eventual .eq("owner_id", ...) filter.
+      const { data: existing, error: readErr } = await supabase
+        .from("operator_businesses")
+        .select("id, application_status")
+        .eq("id", businessId)
+        .eq("owner_id", userId)
+        .maybeSingle();
+      if (readErr) throw new Error(readErr.message);
+      if (!existing) throw new Error("Business not found.");
+
+      if (!applicantCanEdit(existing.application_status)) {
+        throw new Error(
+          `This application cannot be edited while it is "${existing.application_status}". ` +
+            "Contact CashNear operations if you believe this is a mistake.",
+        );
+      }
+
       const { error } = await supabase
         .from("operator_businesses")
-        .update(record)
+        .update(contentFields)
         .eq("id", businessId)
         .eq("owner_id", userId);
       if (error) throw new Error(error.message);
     } else {
+      // application_status defaults to 'draft' at the database level; the
+      // insert never needs to set it explicitly.
       const { data: inserted, error } = await supabase
         .from("operator_businesses")
-        .insert(record)
+        .insert(contentFields)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
       businessId = inserted.id;
     }
 
+    const nextStatus = submit ? ("submitted" as const) : ("draft" as const);
+    const { error: statusErr } = await supabaseAdmin
+      .from("operator_businesses")
+      .update({
+        application_status: nextStatus,
+        submitted_at: submit ? new Date().toISOString() : null,
+      })
+      .eq("id", businessId);
+    if (statusErr) throw new Error(statusErr.message);
+
     // Grant operator_owner role via service role.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
       .from("user_roles")
       .upsert(
@@ -116,14 +157,12 @@ export const upsertOperatorApplication = createServerFn({ method: "POST" })
         { onConflict: "business_id,user_id", ignoreDuplicates: true },
       );
 
-    // Audit
-    await supabase.from("audit_logs").insert({
-      actor_id: userId,
-      actor_role: "operator_owner",
-      action: submit ? "operator.application.submitted" : "operator.application.saved",
-      entity_type: "operator_business",
-      entity_id: businessId,
+    const { error: auditErr } = await supabase.rpc("log_audit_event", {
+      p_action: submit ? "operator.application.submitted" : "operator.application.saved",
+      p_entity_type: "operator_business",
+      p_entity_id: businessId,
     });
+    if (auditErr) throw new Error(auditErr.message);
 
-    return { business_id: businessId, status: record.application_status };
+    return { business_id: businessId, status: nextStatus };
   });
