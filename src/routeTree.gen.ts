@@ -19,8 +19,11 @@ import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedCustomerRouteImport } from './routes/_authenticated/customer'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedOperatorDashboardRouteImport } from './routes/_authenticated/operator.dashboard'
 import { Route as AuthenticatedOperatorApplyRouteImport } from './routes/_authenticated/operator.apply'
+import { Route as AuthenticatedAdminOperatorsRouteImport } from './routes/_authenticated/admin.operators'
+import { Route as AuthenticatedAdminOperatorsIdRouteImport } from './routes/_authenticated/admin.operators.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -71,6 +74,11 @@ const AuthenticatedCustomerRoute = AuthenticatedCustomerRouteImport.update({
   path: '/customer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOperatorDashboardRoute =
   AuthenticatedOperatorDashboardRouteImport.update({
     id: '/operator/dashboard',
@@ -83,32 +91,50 @@ const AuthenticatedOperatorApplyRoute =
     path: '/operator/apply',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminOperatorsRoute =
+  AuthenticatedAdminOperatorsRouteImport.update({
+    id: '/operators',
+    path: '/operators',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminOperatorsIdRoute =
+  AuthenticatedAdminOperatorsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAdminOperatorsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/customer': typeof AuthenticatedCustomerRoute
   '/home': typeof AuthenticatedHomeRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/admin/operators': typeof AuthenticatedAdminOperatorsRouteWithChildren
   '/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
+  '/admin/operators/$id': typeof AuthenticatedAdminOperatorsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/customer': typeof AuthenticatedCustomerRoute
   '/home': typeof AuthenticatedHomeRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/admin/operators': typeof AuthenticatedAdminOperatorsRouteWithChildren
   '/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
+  '/admin/operators/$id': typeof AuthenticatedAdminOperatorsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,13 +143,16 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/customer': typeof AuthenticatedCustomerRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/_authenticated/admin/operators': typeof AuthenticatedAdminOperatorsRouteWithChildren
   '/_authenticated/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/_authenticated/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
+  '/_authenticated/admin/operators/$id': typeof AuthenticatedAdminOperatorsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,26 +161,32 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin'
     | '/customer'
     | '/home'
     | '/onboarding'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/admin/operators'
     | '/operator/apply'
     | '/operator/dashboard'
+    | '/admin/operators/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin'
     | '/customer'
     | '/home'
     | '/onboarding'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/admin/operators'
     | '/operator/apply'
     | '/operator/dashboard'
+    | '/admin/operators/$id'
   id:
     | '__root__'
     | '/'
@@ -159,13 +194,16 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/_authenticated/admin'
     | '/_authenticated/customer'
     | '/_authenticated/home'
     | '/_authenticated/onboarding'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/_authenticated/admin/operators'
     | '/_authenticated/operator/apply'
     | '/_authenticated/operator/dashboard'
+    | '/_authenticated/admin/operators/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -250,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/operator/dashboard': {
       id: '/_authenticated/operator/dashboard'
       path: '/operator/dashboard'
@@ -264,10 +309,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOperatorApplyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/operators': {
+      id: '/_authenticated/admin/operators'
+      path: '/operators'
+      fullPath: '/admin/operators'
+      preLoaderRoute: typeof AuthenticatedAdminOperatorsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/operators/$id': {
+      id: '/_authenticated/admin/operators/$id'
+      path: '/$id'
+      fullPath: '/admin/operators/$id'
+      preLoaderRoute: typeof AuthenticatedAdminOperatorsIdRouteImport
+      parentRoute: typeof AuthenticatedAdminOperatorsRoute
+    }
   }
 }
 
+interface AuthenticatedAdminOperatorsRouteChildren {
+  AuthenticatedAdminOperatorsIdRoute: typeof AuthenticatedAdminOperatorsIdRoute
+}
+
+const AuthenticatedAdminOperatorsRouteChildren: AuthenticatedAdminOperatorsRouteChildren =
+  {
+    AuthenticatedAdminOperatorsIdRoute: AuthenticatedAdminOperatorsIdRoute,
+  }
+
+const AuthenticatedAdminOperatorsRouteWithChildren =
+  AuthenticatedAdminOperatorsRoute._addFileChildren(
+    AuthenticatedAdminOperatorsRouteChildren,
+  )
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminOperatorsRoute: typeof AuthenticatedAdminOperatorsRouteWithChildren
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminOperatorsRoute:
+    AuthenticatedAdminOperatorsRouteWithChildren,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCustomerRoute: typeof AuthenticatedCustomerRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
@@ -276,6 +362,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCustomerRoute: AuthenticatedCustomerRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
