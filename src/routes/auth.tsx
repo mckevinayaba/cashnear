@@ -45,7 +45,7 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: ep.data,
           password: pp.data,
           options: {
@@ -54,6 +54,11 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setMode("signin");
+          setError("An account with this email already exists. Please sign in.");
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: ep.data,
@@ -63,7 +68,12 @@ function AuthPage() {
       }
       navigate({ to: "/home", replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      if (/invalid login credentials/i.test(msg) && mode === "signin") {
+        setError("Email or password is incorrect. Try again, or reset your password.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setBusy(false);
     }
