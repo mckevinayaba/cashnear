@@ -52,8 +52,15 @@ DO $$ DECLARE v_customer uuid := gen_random_uuid(); BEGIN
   END IF;
 
   -- 6. Trusted audit function attributes the real caller, not a spoofed one.
+  -- The write happens as the customer (log_audit_event is SECURITY DEFINER,
+  -- so it can insert regardless of the caller's own privileges); the
+  -- verification read is done as service_role because audit_logs SELECT is
+  -- correctly admin-only (see "Admins read audit logs" policy) -- reading
+  -- back as the same non-admin customer would be blocked by that same
+  -- control, which is the intended behavior, not a bug to work around.
   PERFORM pg_temp.as_user(v_customer);
   PERFORM public.log_audit_event('customer.verification.submitted', 'customer_profile', v_customer::text, NULL);
+  PERFORM pg_temp.as_service_role();
   IF EXISTS (
     SELECT 1 FROM public.audit_logs
     WHERE entity_id = v_customer::text AND action = 'customer.verification.submitted' AND actor_id = v_customer

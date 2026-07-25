@@ -15,6 +15,10 @@ BEGIN
   PERFORM pg_temp.seed_user(v_customer, 'h02-customer@example.test');
   PERFORM pg_temp.seed_user(v_super_admin, 'h02-superadmin@example.test');
 
+  PERFORM pg_temp.as_service_role();
+  INSERT INTO public.user_roles (user_id, role) VALUES (v_super_admin, 'super_admin')
+    ON CONFLICT DO NOTHING;
+
   -- 1. Ordinary user cannot forge a fake admin action via direct INSERT.
   PERFORM pg_temp.as_user(v_customer);
   BEGIN
@@ -47,9 +51,13 @@ BEGIN
 
   -- 3. log_audit_event() always attributes the real caller, ignoring any
   -- attempt to pretend to be someone else -- there is no actor_id
-  -- parameter at all, by construction.
+  -- parameter at all, by construction. Verification reads as service_role:
+  -- audit_logs SELECT is admin-only by design, so reading back as the same
+  -- non-admin customer that just wrote it would be blocked by that same
+  -- (correct) control, not evidence of anything wrong.
   PERFORM pg_temp.as_user(v_customer);
   PERFORM public.log_audit_event('customer.verification.submitted', 'customer_profile', v_customer::text, NULL);
+  PERFORM pg_temp.as_service_role();
   IF EXISTS (
     SELECT 1 FROM public.audit_logs
     WHERE actor_id = v_customer AND actor_role = 'customer' AND action = 'customer.verification.submitted'
@@ -82,9 +90,15 @@ BEGIN
   END;
 
   -- 5. A real privileged action (super_admin role grant) still produces a
-  -- genuine, correctly-attributed audit entry.
+  -- genuine, correctly-attributed audit entry. v_super_admin genuinely
+  -- holds the super_admin role (granted above), so is_admin(auth.uid())
+  -- would actually let this actor read audit_logs directly -- but we still
+  -- switch to service_role for the verification read for consistency and
+  -- to keep this check independent of is_admin's own correctness (already
+  -- covered separately in 004_rls_helper_execute.sql).
   PERFORM pg_temp.as_user(v_super_admin);
   PERFORM public.log_audit_event('role.granted', 'user', v_customer::text, jsonb_build_object('role', 'ops_admin'));
+  PERFORM pg_temp.as_service_role();
   IF EXISTS (
     SELECT 1 FROM public.audit_logs WHERE actor_id = v_super_admin AND action = 'role.granted' AND entity_id = v_customer::text
   ) THEN
