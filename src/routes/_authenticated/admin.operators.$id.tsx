@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,68 +14,93 @@ import {
   Button,
 } from "@/components/ds";
 import { useAuth } from "@/hooks/use-auth";
-import { reviewOperatorApplication } from "@/lib/admin.functions";
+import { reviewOperatorApplication, reinstateOperator } from "@/lib/admin.functions";
+import { requireAdminBeforeLoad } from "@/lib/admin-route-guard";
+import { allowedAdminTransitionsFrom, canReinstateFrom } from "@/lib/operator-application-state";
+import { isReasonRequired } from "@/lib/admin-reason-validation";
+import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
+import { DocumentLink } from "@/components/admin/DocumentLink";
+import { StatusBadge, OPERATOR_STATUS_TONE } from "@/components/admin/StatusBadge";
 import type { Database } from "@/integrations/supabase/types";
 
 type Business = Database["public"]["Tables"]["operator_businesses"]["Row"];
 type Review = Database["public"]["Tables"]["verification_reviews"]["Row"];
-type Decision = "approved" | "rejected" | "info_requested" | "site_verification_required" | "under_review" | "suspended";
+type OperatorDoc = Database["public"]["Tables"]["operator_documents"]["Row"];
+type StaffRow = Database["public"]["Tables"]["operator_staff"]["Row"];
+type TransitionTarget = ReturnType<typeof allowedAdminTransitionsFrom>[number];
+
+const DECISION_LABEL: Record<string, string> = {
+  approved: "Approve",
+  rejected: "Reject",
+  suspended: "Suspend",
+  deactivated: "Deactivate",
+  under_review: "Mark under review",
+  info_requested: "Request info",
+  site_verification_required: "Request site visit",
+};
 
 export const Route = createFileRoute("/_authenticated/admin/operators/$id")({
   head: () => ({ meta: [{ title: "Operator review · CashNear Ops" }] }),
+  beforeLoad: () => requireAdminBeforeLoad(),
   component: OperatorReview,
 });
 
 function OperatorReview() {
   const { id } = Route.useParams();
   const auth = useAuth();
-  const navigate = useNavigate();
   const review = useServerFn(reviewOperatorApplication);
+  const reinstate = useServerFn(reinstateOperator);
 
   const [b, setB] = useState<Business | null>(null);
   const [history, setHistory] = useState<Review[]>([]);
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (auth.loading) return;
-    if (!auth.isAdmin) navigate({ to: "/home", replace: true });
-  }, [auth, navigate]);
+  const [documents, setDocuments] = useState<OperatorDoc[]>([]);
+  const [staff, setStaff] = useState<StaffRow[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [pendingDecision, setPendingDecision] = useState<TransitionTarget | null>(null);
+  const [pendingReinstate, setPendingReinstate] = useState(false);
 
   const load = async () => {
-    const [biz, revs] = await Promise.all([
+    setLoadError(null);
+    const [biz, revs, docs, staffRows] = await Promise.all([
       supabase.from("operator_businesses").select("*").eq("id", id).maybeSingle(),
       supabase
         .from("verification_reviews")
         .select("*")
         .eq("business_id", id)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("operator_documents")
+        .select("*")
+        .eq("business_id", id)
+        .order("uploaded_at", { ascending: false }),
+      supabase.from("operator_staff").select("*").eq("business_id", id),
     ]);
+    if (biz.error) {
+      setLoadError(biz.error.message);
+      return;
+    }
     setB(biz.data);
     setHistory(revs.data ?? []);
+    setDocuments(docs.data ?? []);
+    setStaff(staffRows.data ?? []);
   };
 
   useEffect(() => {
-    load();
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const decide = async (decision: Decision) => {
-    setBusy(true);
-    setErr(null);
-    setOk(null);
-    try {
-      await review({ data: { business_id: id, decision, note } });
-      setOk(`Decision recorded: ${decision.replace("_", " ")}`);
-      setNote("");
-      await load();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Something went wrong.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  if (loadError) {
+    return (
+      <AppShell hideNav desktopWide>
+        <Screen>
+          <p role="alert" className="text-[13px] text-destructive">
+            Could not load this application: {loadError}
+          </p>
+        </Screen>
+      </AppShell>
+    );
+  }
 
   if (!b) {
     return (
@@ -87,21 +112,32 @@ function OperatorReview() {
     );
   }
 
+  const availableTransitions = allowedAdminTransitionsFrom(b.application_status);
+  const canReinstate = auth.hasRole("super_admin") && canReinstateFrom(b.application_status);
+
   return (
     <AppShell hideNav desktopWide>
       <Screen>
         <div className="pt-2">
-          <Link to="/admin/operators" className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground">
+          <Link
+            to="/admin/operators"
+            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground"
+          >
             ← Queue
           </Link>
         </div>
         <Eyebrow>Application review</Eyebrow>
         <Display className="text-[42px]">{b.trading_name || b.legal_name}</Display>
-        <Muted>
-          {b.suburb ? `${b.suburb} · ` : ""}
-          {b.city ?? "—"} · {b.province ?? "—"} · status{" "}
-          <span className="text-foreground">{b.application_status}</span>
-        </Muted>
+        <div className="flex items-center gap-3">
+          <Muted>
+            {b.suburb ? `${b.suburb} · ` : ""}
+            {b.city ?? "—"} · {b.province ?? "—"}
+          </Muted>
+          <StatusBadge
+            label={b.application_status}
+            tone={OPERATOR_STATUS_TONE[b.application_status] ?? "muted"}
+          />
+        </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <DetailCard title="Business">
@@ -135,46 +171,72 @@ function OperatorReview() {
           </DetailCard>
         </div>
 
+        <section>
+          <Eyebrow>Staff</Eyebrow>
+          <div className="mt-3 flex flex-col gap-2">
+            {staff.length === 0 ? (
+              <Muted>No staff on record.</Muted>
+            ) : (
+              staff.map((s) => (
+                <Card key={s.id} variant="quiet">
+                  <CardBody className="flex items-center justify-between gap-4 text-[13px]">
+                    <span className="text-foreground">{s.role.replace("_", " ")}</span>
+                    <span className={s.active ? "text-success" : "text-muted-foreground"}>
+                      {s.active ? "Active" : "Inactive"}
+                    </span>
+                  </CardBody>
+                </Card>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section>
+          <Eyebrow>Documents</Eyebrow>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {documents.length === 0 ? (
+              <Muted>No documents uploaded.</Muted>
+            ) : (
+              documents.map((d) => (
+                <DocumentLink
+                  key={d.id}
+                  bucket="operator-documents"
+                  path={d.storage_path}
+                  label={d.doc_type.replace(/_/g, " ")}
+                />
+              ))
+            )}
+          </div>
+        </section>
+
         <Card variant="lift">
           <CardBody className="flex flex-col gap-3">
             <Eyebrow>Decision</Eyebrow>
-            <textarea
-              rows={3}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Reviewer note (visible to operator)"
-              className="rounded-xl border border-border-strong bg-surface p-3 text-[14px] focus:border-gold focus:outline-none"
-            />
-            {err ? <p className="text-[13px] text-destructive">{err}</p> : null}
-            {ok ? <p className="text-[13px] text-success">{ok}</p> : null}
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
-              <Button variant="success" disabled={busy} onClick={() => decide("approved")}>
-                Approve
-              </Button>
-              <Button variant="secondary" disabled={busy} onClick={() => decide("under_review")}>
-                Mark under review
-              </Button>
-              <Button variant="secondary" disabled={busy} onClick={() => decide("info_requested")}>
-                Request info
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={busy}
-                onClick={() => decide("site_verification_required")}
-              >
-                Site visit
-              </Button>
-              <Button variant="outline" disabled={busy} onClick={() => decide("suspended")}>
-                Suspend
-              </Button>
-              <Button
-                className="!bg-destructive !text-destructive-foreground"
-                disabled={busy}
-                onClick={() => decide("rejected")}
-              >
-                Reject
-              </Button>
-            </div>
+            {availableTransitions.length === 0 && !canReinstate ? (
+              <Muted>No further transitions are available from this status.</Muted>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+                {availableTransitions.map((decision) => (
+                  <Button
+                    key={decision}
+                    variant={decision === "approved" ? "success" : "secondary"}
+                    className={
+                      decision === "rejected"
+                        ? "!bg-destructive !text-destructive-foreground"
+                        : undefined
+                    }
+                    onClick={() => setPendingDecision(decision)}
+                  >
+                    {DECISION_LABEL[decision] ?? decision}
+                  </Button>
+                ))}
+                {canReinstate ? (
+                  <Button variant="gold" onClick={() => setPendingReinstate(true)}>
+                    Reinstate (super admin)
+                  </Button>
+                ) : null}
+              </div>
+            )}
           </CardBody>
         </Card>
 
@@ -192,7 +254,9 @@ function OperatorReview() {
                         {h.from_status ?? "—"} → <span className="text-gold">{h.to_status}</span>
                       </p>
                       {h.decision_note ? (
-                        <Body className="mt-1 text-[13px] text-muted-foreground">{h.decision_note}</Body>
+                        <Body className="mt-1 text-[13px] text-muted-foreground">
+                          {h.decision_note}
+                        </Body>
                       ) : null}
                     </div>
                     <span className="text-[11px] text-muted-foreground">
@@ -205,6 +269,46 @@ function OperatorReview() {
           </div>
         </section>
       </Screen>
+
+      <ConfirmActionDialog
+        open={pendingDecision !== null}
+        onOpenChange={(o) => !o && setPendingDecision(null)}
+        title={
+          pendingDecision
+            ? `${DECISION_LABEL[pendingDecision] ?? pendingDecision} this application?`
+            : ""
+        }
+        description="This decision is recorded and audited, and the operator is notified via their dashboard."
+        confirmLabel={
+          pendingDecision ? (DECISION_LABEL[pendingDecision] ?? pendingDecision) : "Confirm"
+        }
+        requireReason={pendingDecision ? isReasonRequired(pendingDecision) : false}
+        reasonLabel={
+          pendingDecision === "rejected" ? "Reason for rejection" : "Reason for suspension"
+        }
+        destructive={pendingDecision === "rejected" || pendingDecision === "suspended"}
+        onConfirm={async (reason) => {
+          if (!pendingDecision) return;
+          await review({
+            data: { business_id: id, decision: pendingDecision, note: reason || undefined },
+          });
+        }}
+        onSuccess={() => void load()}
+      />
+
+      <ConfirmActionDialog
+        open={pendingReinstate}
+        onOpenChange={setPendingReinstate}
+        title="Reinstate this operator?"
+        description="Restores approved status and reactivates the staff this suspension deactivated. Only super_admin may do this, and you cannot reinstate a business you own or staff."
+        confirmLabel="Reinstate"
+        requireReason
+        reasonLabel="Reinstatement reason"
+        onConfirm={async (reason) => {
+          await reinstate({ data: { business_id: id, reason } });
+        }}
+        onSuccess={() => void load()}
+      />
     </AppShell>
   );
 }

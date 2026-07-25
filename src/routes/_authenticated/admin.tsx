@@ -3,39 +3,79 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, Screen, Eyebrow, Display, Muted, Body, Card, CardBody } from "@/components/ds";
 import { useAuth } from "@/hooks/use-auth";
+import { requireAdminBeforeLoad } from "@/lib/admin-route-guard";
+import type { Database } from "@/integrations/supabase/types";
+
+type AuditLog = Database["public"]["Tables"]["audit_logs"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Operations Control · CashNear" }] }),
+  beforeLoad: () => requireAdminBeforeLoad(),
   component: AdminHome,
 });
+
+type OperatorCounts = {
+  submitted: number;
+  under_review: number;
+  approved: number;
+  rejected: number;
+  suspended: number;
+};
+type CustomerCounts = { pending: number; approved: number; rejected: number };
 
 function AdminHome() {
   const auth = useAuth();
   const navigate = useNavigate();
-  const [counts, setCounts] = useState<{ submitted: number; under_review: number; approved: number; rejected: number } | null>(null);
-
-  useEffect(() => {
-    if (auth.loading) return;
-    if (!auth.isAdmin) navigate({ to: "/home", replace: true });
-  }, [auth, navigate]);
+  const [operatorCounts, setOperatorCounts] = useState<OperatorCounts | null>(null);
+  const [customerCounts, setCustomerCounts] = useState<CustomerCounts | null>(null);
+  const [recent, setRecent] = useState<AuditLog[] | null>(null);
 
   useEffect(() => {
     (async () => {
-      const statuses = ["submitted", "under_review", "approved", "rejected"] as const;
-      const results = await Promise.all(
-        statuses.map((s) =>
+      const opStatuses = [
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+        "suspended",
+      ] as const;
+      const opResults = await Promise.all(
+        opStatuses.map((s) =>
           supabase
             .from("operator_businesses")
             .select("id", { count: "exact", head: true })
             .eq("application_status", s),
         ),
       );
-      setCounts({
-        submitted: results[0].count ?? 0,
-        under_review: results[1].count ?? 0,
-        approved: results[2].count ?? 0,
-        rejected: results[3].count ?? 0,
+      setOperatorCounts({
+        submitted: opResults[0].count ?? 0,
+        under_review: opResults[1].count ?? 0,
+        approved: opResults[2].count ?? 0,
+        rejected: opResults[3].count ?? 0,
+        suspended: opResults[4].count ?? 0,
       });
+
+      const custStatuses = ["pending", "approved", "rejected"] as const;
+      const custResults = await Promise.all(
+        custStatuses.map((s) =>
+          supabase
+            .from("customer_profiles")
+            .select("user_id", { count: "exact", head: true })
+            .eq("verification_status", s),
+        ),
+      );
+      setCustomerCounts({
+        pending: custResults[0].count ?? 0,
+        approved: custResults[1].count ?? 0,
+        rejected: custResults[2].count ?? 0,
+      });
+
+      const { data: recentRows } = await supabase
+        .from("audit_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      setRecent(recentRows ?? []);
     })();
   }, []);
 
@@ -51,7 +91,8 @@ function AdminHome() {
           <div>
             <Eyebrow>Operations Control Centre</Eyebrow>
             <p className="mt-1 text-[13px] text-muted-foreground">
-              Signed in as {auth.user?.email} · {auth.isAdmin ? "Admin" : ""}
+              Signed in as {auth.user?.email} ·{" "}
+              {auth.hasRole("super_admin") ? "Super admin" : "Admin"}
             </p>
           </div>
           <button
@@ -63,40 +104,87 @@ function AdminHome() {
         </header>
 
         <Display className="text-[48px]">CashNear pilot.</Display>
-        <Muted>Manual verification of operators. Auditable trail on every decision.</Muted>
+        <Muted>
+          Manual verification of customers and operators. Auditable trail on every decision.
+        </Muted>
 
-        <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <Stat label="Submitted" value={counts?.submitted ?? "—"} />
-          <Stat label="Under review" value={counts?.under_review ?? "—"} />
-          <Stat label="Approved" value={counts?.approved ?? "—"} />
-          <Stat label="Rejected" value={counts?.rejected ?? "—"} />
+        <section>
+          <Eyebrow>Operators</Eyebrow>
+          <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <Stat label="Submitted" value={operatorCounts?.submitted ?? "—"} />
+            <Stat label="Under review" value={operatorCounts?.under_review ?? "—"} />
+            <Stat label="Approved" value={operatorCounts?.approved ?? "—"} />
+            <Stat label="Rejected" value={operatorCounts?.rejected ?? "—"} />
+            <Stat label="Suspended" value={operatorCounts?.suspended ?? "—"} />
+          </div>
         </section>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Link to="/admin/operators">
-            <Card variant="lift" className="cursor-pointer">
+        <section>
+          <Eyebrow>Customers</Eyebrow>
+          <div className="mt-3 grid grid-cols-3 gap-4">
+            <Stat label="Awaiting review" value={customerCounts?.pending ?? "—"} />
+            <Stat label="Approved" value={customerCounts?.approved ?? "—"} />
+            <Stat label="Rejected" value={customerCounts?.rejected ?? "—"} />
+          </div>
+        </section>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Link to="/admin/customers">
+            <Card variant="lift" className="cursor-pointer h-full">
               <CardBody>
                 <Eyebrow className="text-gold">Verification queue</Eyebrow>
-                <h3 className="mt-2 font-display text-[24px] leading-tight">
-                  Review operator applications
-                </h3>
+                <h3 className="mt-2 font-display text-[22px] leading-tight">Review customer KYC</h3>
                 <Body className="mt-2 text-[14px] text-muted-foreground">
-                  Approve, request info, or reject applications. Every decision is audited.
+                  Approve or reject identity verification submissions.
                 </Body>
               </CardBody>
             </Card>
           </Link>
 
-          <Card variant="outline">
-            <CardBody>
-              <Eyebrow>Coming in Stage 2</Eyebrow>
-              <h3 className="mt-2 font-display text-[24px] leading-tight">Transaction oversight</h3>
-              <Body className="mt-2 text-[14px] text-muted-foreground">
-                Live transaction feed, dispute resolution, and network health.
-              </Body>
-            </CardBody>
-          </Card>
+          <Link to="/admin/operators">
+            <Card variant="lift" className="cursor-pointer h-full">
+              <CardBody>
+                <Eyebrow className="text-gold">Verification queue</Eyebrow>
+                <h3 className="mt-2 font-display text-[22px] leading-tight">
+                  Review operator applications
+                </h3>
+                <Body className="mt-2 text-[14px] text-muted-foreground">
+                  Approve, request info, reject, suspend, or reinstate. Every decision is audited.
+                </Body>
+              </CardBody>
+            </Card>
+          </Link>
+
+          <Link to="/admin/audit">
+            <Card variant="outline" className="cursor-pointer h-full">
+              <CardBody>
+                <Eyebrow>Read-only</Eyebrow>
+                <h3 className="mt-2 font-display text-[22px] leading-tight">Audit activity</h3>
+                <Body className="mt-2 text-[14px] text-muted-foreground">
+                  Every privileged decision, self-attributed and append-only.
+                </Body>
+              </CardBody>
+            </Card>
+          </Link>
         </div>
+
+        <section>
+          <Eyebrow>Recent activity</Eyebrow>
+          <div className="mt-3 flex flex-col gap-1.5">
+            {recent === null ? (
+              <Muted>Loading…</Muted>
+            ) : recent.length === 0 ? (
+              <Muted>No recent activity.</Muted>
+            ) : (
+              recent.map((r) => (
+                <p key={r.id} className="text-[13px] text-muted-foreground">
+                  <span className="text-foreground">{r.action}</span> ·{" "}
+                  {new Date(r.created_at).toLocaleString()}
+                </p>
+              ))
+            )}
+          </div>
+        </section>
       </Screen>
     </AppShell>
   );
@@ -106,7 +194,9 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <Card variant="quiet">
       <CardBody className="flex flex-col gap-2">
-        <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{label}</span>
+        <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+          {label}
+        </span>
         <span className="font-display text-[36px] tabular text-foreground">{value}</span>
       </CardBody>
     </Card>
