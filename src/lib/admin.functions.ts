@@ -9,19 +9,35 @@ import {
 } from "@/lib/operator-application-state";
 import type { Database } from "@/integrations/supabase/types";
 
-const decisionSchema = z.object({
-  business_id: z.string().uuid(),
-  decision: z.enum([
-    "approved",
-    "rejected",
-    "info_requested",
-    "site_verification_required",
-    "under_review",
-    "suspended",
-    "deactivated",
-  ]),
-  note: z.string().trim().max(2000).optional().or(z.literal("")),
-});
+const REASON_REQUIRED_DECISIONS = new Set(["rejected", "suspended"]);
+const MIN_REASON_LENGTH = 10;
+
+const decisionSchema = z
+  .object({
+    business_id: z.string().uuid(),
+    decision: z.enum([
+      "approved",
+      "rejected",
+      "info_requested",
+      "site_verification_required",
+      "under_review",
+      "suspended",
+      "deactivated",
+    ]),
+    note: z.string().trim().max(2000).optional().or(z.literal("")),
+  })
+  .superRefine((val, ctx) => {
+    if (
+      REASON_REQUIRED_DECISIONS.has(val.decision) &&
+      (!val.note || val.note.trim().length < MIN_REASON_LENGTH)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["note"],
+        message: `A written reason (at least ${MIN_REASON_LENGTH} characters) is required to reject or suspend an application.`,
+      });
+    }
+  });
 
 async function assertAdmin(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -189,11 +205,24 @@ export const reinstateOperator = createServerFn({ method: "POST" })
     return { ok: true, status: "approved" as const };
   });
 
-const customerDecisionSchema = z.object({
-  customer_user_id: z.string().uuid(),
-  decision: z.enum(["approved", "rejected", "suspended", "pending"]),
-  note: z.string().trim().max(2000).optional().or(z.literal("")),
-});
+const customerDecisionSchema = z
+  .object({
+    customer_user_id: z.string().uuid(),
+    decision: z.enum(["approved", "rejected", "suspended", "pending"]),
+    note: z.string().trim().max(2000).optional().or(z.literal("")),
+  })
+  .superRefine((val, ctx) => {
+    if (
+      REASON_REQUIRED_DECISIONS.has(val.decision) &&
+      (!val.note || val.note.trim().length < MIN_REASON_LENGTH)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["note"],
+        message: `A written reason (at least ${MIN_REASON_LENGTH} characters) is required to reject or suspend a verification.`,
+      });
+    }
+  });
 
 /**
  * Admin: record a KYC verification decision on a customer profile. This is
