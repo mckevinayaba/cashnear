@@ -111,6 +111,9 @@ export type Database = {
         Row: {
           agreements_accepted_at: string | null
           application_status: Database["public"]["Enums"]["operator_application_status"]
+          business_structure:
+            | Database["public"]["Enums"]["business_structure_type"]
+            | null
           business_type: string | null
           city: string | null
           created_at: string
@@ -128,7 +131,15 @@ export type Database = {
           province: Database["public"]["Enums"]["sa_province"] | null
           registration_number: string | null
           representative_email: string | null
+          representative_id_country: string | null
+          representative_id_expiry: string | null
           representative_id_number: string | null
+          representative_id_type:
+            | Database["public"]["Enums"]["identity_document_type"]
+            | null
+          representative_immigration_status_expiry: string | null
+          representative_immigration_status_number: string | null
+          representative_immigration_status_type: string | null
           representative_mobile: string | null
           representative_name: string | null
           representative_relationship: string | null
@@ -150,6 +161,9 @@ export type Database = {
         Insert: {
           agreements_accepted_at?: string | null
           application_status?: Database["public"]["Enums"]["operator_application_status"]
+          business_structure?:
+            | Database["public"]["Enums"]["business_structure_type"]
+            | null
           business_type?: string | null
           city?: string | null
           created_at?: string
@@ -167,7 +181,15 @@ export type Database = {
           province?: Database["public"]["Enums"]["sa_province"] | null
           registration_number?: string | null
           representative_email?: string | null
+          representative_id_country?: string | null
+          representative_id_expiry?: string | null
           representative_id_number?: string | null
+          representative_id_type?:
+            | Database["public"]["Enums"]["identity_document_type"]
+            | null
+          representative_immigration_status_expiry?: string | null
+          representative_immigration_status_number?: string | null
+          representative_immigration_status_type?: string | null
           representative_mobile?: string | null
           representative_name?: string | null
           representative_relationship?: string | null
@@ -189,6 +211,9 @@ export type Database = {
         Update: {
           agreements_accepted_at?: string | null
           application_status?: Database["public"]["Enums"]["operator_application_status"]
+          business_structure?:
+            | Database["public"]["Enums"]["business_structure_type"]
+            | null
           business_type?: string | null
           city?: string | null
           created_at?: string
@@ -206,7 +231,15 @@ export type Database = {
           province?: Database["public"]["Enums"]["sa_province"] | null
           registration_number?: string | null
           representative_email?: string | null
+          representative_id_country?: string | null
+          representative_id_expiry?: string | null
           representative_id_number?: string | null
+          representative_id_type?:
+            | Database["public"]["Enums"]["identity_document_type"]
+            | null
+          representative_immigration_status_expiry?: string | null
+          representative_immigration_status_number?: string | null
+          representative_immigration_status_type?: string | null
           representative_mobile?: string | null
           representative_name?: string | null
           representative_relationship?: string | null
@@ -451,6 +484,15 @@ export type Database = {
         Args: { _business_id: string; _user_id: string }
         Returns: boolean
       }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_entity_id?: string
+          p_entity_type: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role:
@@ -460,6 +502,13 @@ export type Database = {
         | "operator_cashier"
         | "ops_admin"
         | "super_admin"
+      business_structure_type:
+        | "sole_trader"
+        | "registered_company"
+        | "close_corporation"
+        | "partnership"
+        | "cooperative"
+        | "other"
       document_type:
         | "id_document"
         | "business_registration"
@@ -469,6 +518,14 @@ export type Database = {
         | "premises_photo"
         | "signage_photo"
         | "other"
+        | "immigration_status"
+        | "passport_supporting"
+      identity_document_type:
+        | "sa_id"
+        | "passport"
+        | "asylum_permit"
+        | "refugee_permit"
+        | "permanent_residence_permit"
       operator_application_status:
         | "draft"
         | "submitted"
@@ -640,6 +697,14 @@ export const Constants = {
         "ops_admin",
         "super_admin",
       ],
+      business_structure_type: [
+        "sole_trader",
+        "registered_company",
+        "close_corporation",
+        "partnership",
+        "cooperative",
+        "other",
+      ],
       document_type: [
         "id_document",
         "business_registration",
@@ -649,6 +714,15 @@ export const Constants = {
         "premises_photo",
         "signage_photo",
         "other",
+        "immigration_status",
+        "passport_supporting",
+      ],
+      identity_document_type: [
+        "sa_id",
+        "passport",
+        "asylum_permit",
+        "refugee_permit",
+        "permanent_residence_permit",
       ],
       operator_application_status: [
         "draft",
