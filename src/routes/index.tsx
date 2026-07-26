@@ -279,7 +279,7 @@ function Hero({ signedIn }: { signedIn: boolean }) {
           <div className="absolute inset-0 rounded-[28px] border border-border-strong bg-surface" />
           <div className="relative flex h-full flex-col justify-between rounded-[28px] p-8">
             <div className="flex items-center justify-between">
-              <SectionEyebrow>Example request</SectionEyebrow>
+              <SectionEyebrow>How a request could look</SectionEyebrow>
             </div>
             <div>
               <div className="text-[13px] text-muted-foreground">Amount</div>
@@ -292,9 +292,15 @@ function Hero({ signedIn }: { signedIn: boolean }) {
                 <Stat label="Distance" value="1.2 km" />
               </div>
             </div>
-            <div className="flex items-center gap-3 border-t border-border pt-5 text-[12px] text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-success" />
-              Checked shop · Rosebank
+            <div className="flex flex-col gap-3 border-t border-border pt-5">
+              <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                Example shop nearby
+              </div>
+              <p className="text-[13px] leading-relaxed text-muted-foreground">
+                This is only an example. The amount, fee, time and distance are not from a real
+                request.
+              </p>
             </div>
           </div>
         </div>
