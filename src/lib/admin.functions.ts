@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isValidAdminTransition } from "@/lib/operator-application-state";
+import type { Database } from "@/integrations/supabase/types";
 
 const decisionSchema = z.object({
   business_id: z.string().uuid(),
@@ -17,11 +19,8 @@ const decisionSchema = z.object({
   note: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+async function assertAdmin(supabase: SupabaseClient<Database>, userId: string) {
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) throw new Error(error.message);
   const roles = (data ?? []).map((r: { role: string }) => r.role);
   if (!roles.includes("ops_admin") && !roles.includes("super_admin")) {
@@ -136,7 +135,11 @@ export const reviewCustomerVerification = createServerFn({ method: "POST" })
       p_action: `customer.verification.${data.decision}`,
       p_entity_type: "customer_profile",
       p_entity_id: data.customer_user_id,
-      p_metadata: { note: data.note ?? null, from_status: current.verification_status, reviewer_role: role },
+      p_metadata: {
+        note: data.note ?? null,
+        from_status: current.verification_status,
+        reviewer_role: role,
+      },
     });
     if (auditErr) throw new Error(auditErr.message);
 

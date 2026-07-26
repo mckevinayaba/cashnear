@@ -1,7 +1,6 @@
 import type { Database } from "@/integrations/supabase/types";
 
-export type OperatorApplicationStatus =
-  Database["public"]["Enums"]["operator_application_status"];
+export type OperatorApplicationStatus = Database["public"]["Enums"]["operator_application_status"];
 
 /**
  * States an applicant may edit/resubmit from. Anything else (submitted,
@@ -44,7 +43,13 @@ const ADMIN_ALLOWED_TRANSITIONS: Readonly<
   Record<OperatorApplicationStatus, readonly OperatorApplicationStatus[]>
 > = {
   draft: [],
-  submitted: ["under_review", "info_requested", "site_verification_required", "approved", "rejected"],
+  submitted: [
+    "under_review",
+    "info_requested",
+    "site_verification_required",
+    "approved",
+    "rejected",
+  ],
   under_review: ["info_requested", "site_verification_required", "approved", "rejected"],
   info_requested: ["under_review"],
   site_verification_required: ["under_review", "approved", "rejected"],

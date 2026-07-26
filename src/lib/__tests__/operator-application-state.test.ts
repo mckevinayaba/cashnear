@@ -58,7 +58,13 @@ describe("isValidAdminTransition — full 9x9 transition matrix", () => {
   // just echo it back.
   const EXPECTED: Record<OperatorApplicationStatus, OperatorApplicationStatus[]> = {
     draft: [],
-    submitted: ["under_review", "info_requested", "site_verification_required", "approved", "rejected"],
+    submitted: [
+      "under_review",
+      "info_requested",
+      "site_verification_required",
+      "approved",
+      "rejected",
+    ],
     under_review: ["info_requested", "site_verification_required", "approved", "rejected"],
     info_requested: ["under_review"],
     site_verification_required: ["under_review", "approved", "rejected"],

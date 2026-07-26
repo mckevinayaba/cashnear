@@ -30,23 +30,21 @@ export const submitCustomerVerification = createServerFn({ method: "POST" })
     // through the service role is what actually makes that column
     // writable at all now, consistent with the DB-level lockdown.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("customer_profiles")
-      .upsert(
-        {
-          user_id: userId,
-          full_legal_name: data.full_legal_name,
-          mobile_number: data.mobile_number,
-          id_document_type: data.id_document_type,
-          id_document_number: data.id_document_number,
-          id_document_path: data.id_document_path,
-          selfie_path: data.selfie_path || null,
-          consent_accepted_at: nowIso,
-          submitted_at: nowIso,
-          verification_status: "pending",
-        },
-        { onConflict: "user_id" },
-      );
+    const { error } = await supabaseAdmin.from("customer_profiles").upsert(
+      {
+        user_id: userId,
+        full_legal_name: data.full_legal_name,
+        mobile_number: data.mobile_number,
+        id_document_type: data.id_document_type,
+        id_document_number: data.id_document_number,
+        id_document_path: data.id_document_path,
+        selfie_path: data.selfie_path || null,
+        consent_accepted_at: nowIso,
+        submitted_at: nowIso,
+        verification_status: "pending",
+      },
+      { onConflict: "user_id" },
+    );
     if (error) throw new Error(error.message);
 
     const { error: auditErr } = await supabase.rpc("log_audit_event", {

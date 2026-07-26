@@ -29,7 +29,17 @@ const applicationSchema = z.object({
   postal_code: z.string().trim().min(4).max(10),
   premises_type: z.string().trim().max(80).optional().or(z.literal("")),
   terminal_provider: z
-    .enum(["yoco", "ikhokha", "fnb", "standard_bank", "nedbank", "absa", "kazang", "flash", "other"])
+    .enum([
+      "yoco",
+      "ikhokha",
+      "fnb",
+      "standard_bank",
+      "nedbank",
+      "absa",
+      "kazang",
+      "flash",
+      "other",
+    ])
     .optional(),
   terminal_model: z.string().trim().max(120).optional().or(z.literal("")),
   representative_name: z.string().trim().min(2).max(200),
