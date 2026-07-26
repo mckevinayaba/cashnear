@@ -65,6 +65,17 @@ export const reviewOperatorApplication = createServerFn({ method: "POST" })
     if (readErr) throw new Error(readErr.message);
     if (!current) throw new Error("Business not found");
 
+    // Idempotency: the server is the source of truth for duplicate
+    // submissions (double-click, retried request, etc.) -- a repeat call
+    // requesting the status the business is already at is a safe no-op,
+    // not a second mutation, second verification_reviews row, or second
+    // audit_logs entry. Client-side busy-state disabling alone cannot be
+    // relied on to prevent this (confirmed during authenticated staging
+    // QA: a scripted rapid double-click fired two requests).
+    if (current.application_status === data.decision) {
+      return { ok: true, status: data.decision, alreadyApplied: true as const };
+    }
+
     if (!isValidAdminTransition(current.application_status, data.decision)) {
       throw new Error(
         `Cannot move an application from "${current.application_status}" to "${data.decision}".`,
@@ -245,6 +256,13 @@ export const reviewCustomerVerification = createServerFn({ method: "POST" })
       .maybeSingle();
     if (readErr) throw new Error(readErr.message);
     if (!current) throw new Error("Customer profile not found");
+
+    // Idempotency: same rationale as reviewOperatorApplication above -- a
+    // repeat call requesting the status the profile is already at is a
+    // safe no-op, not a second update or a second audit_logs entry.
+    if (current.verification_status === data.decision) {
+      return { ok: true, status: data.decision, alreadyApplied: true as const };
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: updErr } = await supabaseAdmin

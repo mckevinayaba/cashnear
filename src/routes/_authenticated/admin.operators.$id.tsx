@@ -21,7 +21,28 @@ import { isReasonRequired } from "@/lib/admin-reason-validation";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { DocumentLink } from "@/components/admin/DocumentLink";
 import { StatusBadge, OPERATOR_STATUS_TONE } from "@/components/admin/StatusBadge";
+import {
+  IDENTITY_DOCUMENT_LABELS,
+  BUSINESS_STRUCTURE_LABELS,
+  requiresImmigrationStatusDocument,
+  getBusinessProofRequirement,
+  type IdentityDocumentType,
+  type BusinessStructureType,
+} from "@/lib/operator-document-requirements";
 import type { Database } from "@/integrations/supabase/types";
+
+const DOC_TYPE_LABEL: Record<string, string> = {
+  id_document: "Identity document",
+  business_registration: "Business registration or proof",
+  proof_of_address: "Proof of business address",
+  bank_confirmation: "Bank confirmation",
+  terminal_proof: "Card machine proof",
+  premises_photo: "Shop photo",
+  signage_photo: "Signage photo",
+  immigration_status: "Right to work or run a business",
+  passport_supporting: "Supporting passport",
+  other: "Other document",
+};
 
 type Business = Database["public"]["Tables"]["operator_businesses"]["Row"];
 type Review = Database["public"]["Tables"]["verification_reviews"]["Row"];
@@ -144,11 +165,25 @@ function OperatorReview() {
             <Row k="Legal name" v={b.legal_name} />
             <Row k="Trading name" v={b.trading_name} />
             <Row k="Type" v={b.business_type} />
+            <Row
+              k="Structure"
+              v={
+                b.business_structure
+                  ? BUSINESS_STRUCTURE_LABELS[b.business_structure as BusinessStructureType]
+                  : null
+              }
+            />
             <Row k="Registration" v={b.registration_number} />
             <Row k="Tax" v={b.tax_number} />
             <Row k="Years operating" v={b.years_operating} />
             <Row k="Premises" v={b.premises_type} />
             <Row k="Description" v={b.description} />
+            {getBusinessProofRequirement(b.business_structure as BusinessStructureType | null)
+              ?.manualReview ? (
+              <p className="mt-2 text-[12px] text-muted-foreground">
+                Business type is "Other" -- check the business-proof document by hand.
+              </p>
+            ) : null}
           </DetailCard>
           <DetailCard title="Location">
             <Row k="Street" v={b.street_address} />
@@ -164,11 +199,57 @@ function OperatorReview() {
           </DetailCard>
           <DetailCard title="Representative">
             <Row k="Name" v={b.representative_name} />
-            <Row k="SA ID" v={b.representative_id_number} />
+            <Row
+              k={
+                b.representative_id_type
+                  ? IDENTITY_DOCUMENT_LABELS[b.representative_id_type as IdentityDocumentType]
+                  : "Identity document"
+              }
+              v={b.representative_id_number}
+            />
+            {b.representative_id_type && b.representative_id_type !== "sa_id" ? (
+              <>
+                <Row
+                  k={
+                    b.representative_id_type === "passport"
+                      ? "Country of issue"
+                      : "Country of origin"
+                  }
+                  v={b.representative_id_country}
+                />
+                <Row k="ID expiry" v={b.representative_id_expiry} />
+              </>
+            ) : null}
             <Row k="Mobile" v={b.representative_mobile} />
             <Row k="Email" v={b.representative_email} />
             <Row k="Relationship" v={b.representative_relationship} />
           </DetailCard>
+          {b.representative_id_type &&
+          requiresImmigrationStatusDocument(b.representative_id_type as IdentityDocumentType) ? (
+            <DetailCard title="Right to work or run a business">
+              <Row k="Document type" v={b.representative_immigration_status_type} />
+              <Row k="Document number" v={b.representative_immigration_status_number} />
+              <Row k="Expiry date" v={b.representative_immigration_status_expiry} />
+              <div className="mt-1">
+                {(() => {
+                  const doc = documents.find((d) => d.doc_type === "immigration_status");
+                  return doc ? (
+                    <DocumentLink
+                      bucket="operator-documents"
+                      path={doc.storage_path}
+                      label="Uploaded document"
+                    />
+                  ) : (
+                    <Muted>No document uploaded yet.</Muted>
+                  );
+                })()}
+              </div>
+              <p className="mt-3 text-[12px] text-muted-foreground">
+                Eligibility requires manual review. A visa or permit being uploaded does not by
+                itself confirm the applicant may work or run a business here.
+              </p>
+            </DetailCard>
+          ) : null}
         </div>
 
         <section>
@@ -202,7 +283,7 @@ function OperatorReview() {
                   key={d.id}
                   bucket="operator-documents"
                   path={d.storage_path}
-                  label={d.doc_type.replace(/_/g, " ")}
+                  label={DOC_TYPE_LABEL[d.doc_type] ?? d.doc_type.replace(/_/g, " ")}
                 />
               ))
             )}

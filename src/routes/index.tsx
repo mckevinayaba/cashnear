@@ -5,17 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CashNear — Neighbourhood cash access, safely." },
+      { title: "CashNear — Find cash near you." },
       {
         name: "description",
         content:
-          "CashNear connects South Africans with verified neighbourhood businesses that can help you access cash safely, conveniently and transparently. Preparing for a controlled Johannesburg pilot.",
+          "CashNear helps you find a checked shop near you for cash. Cash requests are not open yet. We are checking shops in Johannesburg.",
       },
-      { property: "og:title", content: "CashNear — Neighbourhood cash access, safely." },
+      { property: "og:title", content: "CashNear — Need cash? Find a shop nearby." },
       {
         property: "og:description",
-        content:
-          "CashNear connects South Africans with verified neighbourhood businesses that can help you access cash safely, conveniently and transparently. Preparing for a controlled Johannesburg pilot.",
+        content: "Find a checked shop near you for cash. Cash requests are not open yet.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -153,11 +152,21 @@ function SiteHeader({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () 
       <Container className="flex h-16 items-center justify-between">
         <Wordmark />
         <nav className="hidden items-center gap-8 text-[13px] text-muted-foreground md:flex">
-          <a href="#how" className="hover:text-foreground">How it works</a>
-          <a href="#customers" className="hover:text-foreground">For customers</a>
-          <a href="#operators" className="hover:text-foreground">For operators</a>
-          <a href="#safety" className="hover:text-foreground">Safety</a>
-          <a href="#about" className="hover:text-foreground">About</a>
+          <a href="#how" className="hover:text-foreground">
+            How it works
+          </a>
+          <a href="#customers" className="hover:text-foreground">
+            For customers
+          </a>
+          <a href="#operators" className="hover:text-foreground">
+            For businesses
+          </a>
+          <a href="#safety" className="hover:text-foreground">
+            Trust
+          </a>
+          <a href="#about" className="hover:text-foreground">
+            About
+          </a>
         </nav>
         <div className="flex items-center gap-2">
           {signedIn ? (
@@ -166,7 +175,7 @@ function SiteHeader({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () 
                 to="/home"
                 className="hidden md:inline-flex h-10 items-center rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
               >
-                Go to dashboard
+                Go to my account
               </Link>
               <button
                 onClick={onSignOut}
@@ -204,31 +213,34 @@ function Hero({ signedIn }: { signedIn: boolean }) {
     <section className="border-b border-border">
       <Container className="grid gap-16 py-20 lg:grid-cols-[1.15fr_1fr] lg:py-28">
         <div className="flex flex-col justify-center">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border-strong px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold" /> Johannesburg pilot
-          </span>
-          <h1 className="mt-6 font-display text-[56px] leading-[0.98] tracking-tight text-foreground md:text-[76px]">
+          <h1 className="font-display text-[56px] leading-[0.98] tracking-tight text-foreground md:text-[76px]">
             Need cash?
             <br />
-            Find it nearby.
+            Find a shop nearby that can help.
           </h1>
           <p className="mt-6 max-w-[52ch] text-[16px] leading-relaxed text-muted-foreground">
-            CashNear connects you with verified neighbourhood businesses that can help you access
-            cash safely, conveniently and transparently.
+            CashNear helps you find a checked shop near you. You will see the fee before you go.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
             {signedIn ? (
-              <PrimaryBtn to="/home" size="lg">Go to dashboard</PrimaryBtn>
+              <PrimaryBtn to="/home" size="lg">
+                Go to my account
+              </PrimaryBtn>
             ) : (
-              <PrimaryBtn to="/auth" size="lg">Get started</PrimaryBtn>
+              <>
+                <PrimaryBtn to="/auth" size="lg">
+                  I need cash
+                </PrimaryBtn>
+                <SecondaryBtn to="/auth" size="lg">
+                  I own a shop
+                </SecondaryBtn>
+              </>
             )}
-            <SecondaryBtn href="#how" size="lg">How it works</SecondaryBtn>
           </div>
 
           <p className="mt-8 text-[13px] text-muted-foreground">
-            CashNear is preparing for a controlled pilot in Johannesburg. Not yet available
-            nationwide.
+            Cash requests are not open yet. We are checking shops in Johannesburg.
           </p>
         </div>
 
@@ -237,21 +249,22 @@ function Hero({ signedIn }: { signedIn: boolean }) {
           <div className="absolute inset-0 rounded-[28px] border border-border-strong bg-surface" />
           <div className="relative flex h-full flex-col justify-between rounded-[28px] p-8">
             <div className="flex items-center justify-between">
-              <SectionEyebrow>Live pilot corridor</SectionEyebrow>
-              <span className="text-[11px] text-muted-foreground">ZAR</span>
+              <SectionEyebrow>Example request</SectionEyebrow>
             </div>
             <div>
-              <div className="text-[13px] text-muted-foreground">Requested</div>
-              <div className="mt-1 font-display text-[64px] leading-none text-foreground">R 500</div>
+              <div className="text-[13px] text-muted-foreground">Amount</div>
+              <div className="mt-1 font-display text-[64px] leading-none text-foreground">
+                R 500
+              </div>
               <div className="mt-6 grid grid-cols-3 gap-4 text-[12px]">
                 <Stat label="Fee" value="R 6" />
-                <Stat label="ETA" value="9 min" />
+                <Stat label="Time" value="9 min" />
                 <Stat label="Distance" value="1.2 km" />
               </div>
             </div>
             <div className="flex items-center gap-3 border-t border-border pt-5 text-[12px] text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-success" />
-              Verified operator · Rosebank
+              Checked shop · Rosebank
             </div>
           </div>
         </div>
@@ -275,26 +288,27 @@ function HowItWorks() {
   const steps = [
     {
       n: "01",
-      title: "Request the cash amount you need.",
-      body: "Tell CashNear how much cash you need and where you are.",
+      title: "Tell us how much you need",
+      body: "Enter the amount and your location.",
     },
     {
       n: "02",
-      title: "Get matched with a verified nearby operator.",
-      body: "We route your request to a verified neighbourhood business that can help.",
+      title: "See a shop near you and the fee",
+      body: "A checked shop confirms it can help.",
     },
     {
       n: "03",
-      title: "Pay directly at the operator and collect your cash.",
-      body: "You settle the payment on the operator's own card machine and walk away with cash.",
+      title: "Go there and get your cash",
+      body: "See the fee and address before you go.",
     },
   ];
   return (
     <section id="how" className="border-b border-border">
       <Container className="py-20 lg:py-28">
         <SectionEyebrow>How it works</SectionEyebrow>
-        <SectionTitle>Three steps. Nothing hidden.</SectionTitle>
-        <div className="mt-14 grid gap-10 md:grid-cols-3">
+        <SectionTitle>How to get cash</SectionTitle>
+        <p className="mt-4 text-[15px] text-muted-foreground">When cash requests open:</p>
+        <div className="mt-10 grid gap-10 md:grid-cols-3">
           {steps.map((s) => (
             <div key={s.n} className="flex flex-col gap-4">
               <span className="font-mono text-[12px] text-gold">{s.n}</span>
@@ -305,9 +319,8 @@ function HowItWorks() {
         </div>
 
         <div className="mt-14 rounded-2xl border border-border-strong bg-surface p-6 text-[14px] leading-relaxed text-muted-foreground">
-          <span className="text-foreground">Payment disclosure. </span>
-          CashNear does not hold or process your payment. Payment is completed directly with the
-          verified operator.
+          <span className="text-foreground">Please note: </span>
+          CashNear does not hold your money. You pay the shop directly.
         </div>
       </Container>
     </section>
@@ -318,48 +331,53 @@ function HowItWorks() {
 
 function ForCustomers() {
   const items = [
-    "Find nearby cash access.",
-    "See the fee before travelling.",
-    "Use verified commercial locations.",
-    "Receive a secure transaction code.",
-    "Confirm only after receiving cash.",
+    "Find a shop near you.",
+    "See the fee before you agree.",
+    "Meet at the shop, not someone's home.",
+    "Get the address after the shop agrees.",
+    "Pay the shop, not CashNear.",
   ];
   return (
     <section id="customers" className="border-b border-border">
       <Container className="grid gap-12 py-20 lg:grid-cols-2 lg:py-28">
         <div>
           <SectionEyebrow>For customers</SectionEyebrow>
-          <SectionTitle>Cash, on your terms.</SectionTitle>
+          <SectionTitle>Cash near you, when you need it.</SectionTitle>
           <p className="mt-6 max-w-[46ch] text-[15px] leading-relaxed text-muted-foreground">
-            CashNear is built for people who need cash quickly, without queueing at unfamiliar
-            machines or walking around unknown neighbourhoods with money in hand.
+            No standing at a strange machine. No walking around with money in your hand.
           </p>
           <div className="mt-8">
-            <PrimaryBtn to="/auth" size="lg">Create a customer account</PrimaryBtn>
+            <PrimaryBtn to="/auth" size="lg">
+              I need cash
+            </PrimaryBtn>
           </div>
         </div>
-        <ul className="flex flex-col divide-y divide-border border-y border-border">
-          {items.map((it) => (
-            <li key={it} className="flex items-center gap-4 py-5">
-              <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              <span className="text-[15px] text-foreground">{it}</span>
-            </li>
-          ))}
-        </ul>
+        <div>
+          <p className="mb-3 text-[13px] uppercase tracking-[0.2em] text-muted-foreground">
+            Once cash requests open:
+          </p>
+          <ul className="flex flex-col divide-y divide-border border-y border-border">
+            {items.map((it) => (
+              <li key={it} className="flex items-center gap-4 py-5">
+                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                <span className="text-[15px] text-foreground">{it}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </Container>
     </section>
   );
 }
 
-/* ---------------- For operators ---------------- */
+/* ---------------- For businesses ---------------- */
 
 function ForOperators() {
   const items = [
-    "Receive verified customer demand.",
-    "Control when you are available.",
-    "Choose the amounts you can serve.",
-    "Build a trusted business profile.",
-    "Track requests, earnings and platform fees.",
+    "Get more customers.",
+    "When cash requests open, approved businesses can earn a fee.",
+    "Choose when you are available.",
+    "See the amount before you accept.",
   ];
   return (
     <section id="operators" className="border-b border-border">
@@ -373,15 +391,24 @@ function ForOperators() {
           ))}
         </ul>
         <div className="order-1 lg:order-2">
-          <SectionEyebrow>For operators</SectionEyebrow>
-          <SectionTitle>Put your card machine to work.</SectionTitle>
-          <p className="mt-6 max-w-[46ch] text-[15px] leading-relaxed text-muted-foreground">
-            Verified South African businesses with an existing card machine can join the CashNear
-            operator network and earn on every successful cash request they serve.
+          <SectionEyebrow>For businesses</SectionEyebrow>
+          <SectionTitle>Do you own a shop?</SectionTitle>
+          <p className="mt-3 text-[18px] font-medium text-foreground">
+            Get more customers and earn a fee.
+          </p>
+          <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-muted-foreground">
+            Join CashNear and help people nearby get cash.
+          </p>
+          <p className="mt-4 text-[13px] text-muted-foreground">
+            Register your business now. We will let you know when cash requests open.
+          </p>
+          <p className="mt-2 text-[13px] text-muted-foreground">
+            Shops and other approved businesses can join.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <PrimaryBtn to="/auth" size="lg">Apply to become an operator</PrimaryBtn>
-            <SecondaryBtn to="/auth" size="lg">Become an operator</SecondaryBtn>
+            <PrimaryBtn to="/auth" size="lg">
+              Register my business
+            </PrimaryBtn>
           </div>
         </div>
       </Container>
@@ -389,30 +416,27 @@ function ForOperators() {
   );
 }
 
-/* ---------------- Safety ---------------- */
+/* ---------------- Trust ---------------- */
 
 function Safety() {
   const items = [
-    ["No public map of operator cash holdings", "Locations are never listed publicly."],
-    ["Exact location revealed only after acceptance", "Precise pickup is shared once both sides confirm."],
-    ["Commercial locations only during the pilot", "No residential addresses accepted in Version 1."],
-    ["Time-limited transaction codes", "Every request carries a short-lived confirmation code."],
-    ["Incident reporting", "Report a problem in-app and pause the operator instantly."],
-    ["Verified business onboarding", "Every operator is manually reviewed by our ops team."],
+    "We check every shop before it can help customers.",
+    "When cash requests open, you will see the fee before you agree.",
+    "The address will be shared after the shop accepts your request.",
+    "Meet at the shop, not at someone's home.",
   ];
   return (
     <section id="safety" className="border-b border-border">
       <Container className="py-20 lg:py-28">
-        <SectionEyebrow>Safety by design</SectionEyebrow>
-        <SectionTitle>Trust is the product.</SectionTitle>
-        <div className="mt-14 grid gap-6 md:grid-cols-2">
-          {items.map(([title, body]) => (
-            <div
-              key={title}
-              className="rounded-2xl border border-border-strong bg-surface p-6"
-            >
-              <h3 className="font-display text-[20px] leading-tight text-foreground">{title}</h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{body}</p>
+        <SectionEyebrow>Trust</SectionEyebrow>
+        <SectionTitle>Know before you go</SectionTitle>
+        <p className="mt-4 max-w-[52ch] text-[15px] leading-relaxed text-muted-foreground">
+          CashNear is designed to make the process clearer and safer.
+        </p>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {items.map((item) => (
+            <div key={item} className="rounded-2xl border border-border-strong bg-surface p-6">
+              <p className="font-display text-[19px] leading-tight text-foreground">{item}</p>
             </div>
           ))}
         </div>
@@ -421,20 +445,19 @@ function Safety() {
   );
 }
 
-/* ---------------- Pilot / About ---------------- */
+/* ---------------- About ---------------- */
 
 function Pilot() {
   return (
     <section id="about" className="border-b border-border">
       <Container className="grid gap-12 py-20 lg:grid-cols-[1fr_1.1fr] lg:py-28">
         <div>
-          <SectionEyebrow>The pilot</SectionEyebrow>
+          <SectionEyebrow>Our approach</SectionEyebrow>
           <SectionTitle>Small on purpose.</SectionTitle>
         </div>
         <p className="text-[17px] leading-relaxed text-muted-foreground">
-          CashNear is launching carefully, beginning with a small network of verified businesses in
-          one Johannesburg corridor. The goal is to prove safety, reliability and repeatable access
-          before expanding.
+          CashNear is starting small. We are checking shops in one part of Johannesburg first. This
+          helps us keep it safe and reliable.
         </p>
       </Container>
     </section>
@@ -445,14 +468,24 @@ function Pilot() {
 
 function Faq() {
   const faqs: [string, string][] = [
-    ["What is CashNear?", "CashNear is a South African platform that connects people who need cash with verified neighbourhood businesses that can serve them."],
-    ["Does CashNear hold my money?", "No. CashNear does not hold or process your payment. Payment happens directly between you and the operator on their card machine."],
-    ["How do I pay?", "You pay the operator directly using your card at their existing card machine, and they hand you the agreed cash."],
-    ["Who can become an operator?", "Registered South African businesses with an active card machine and a commercial location can apply. Every operator is manually verified."],
-    ["How are operators verified?", "Our operations team reviews business documents, ownership, premises and terminal details before an operator can accept requests."],
-    ["What fees do customers pay?", "During the pilot, transparent fees typically fall in the R2–R8 band per request. The exact fee is shown before you travel."],
-    ["Is CashNear available everywhere?", "No. CashNear is preparing for a controlled pilot in one Johannesburg corridor. Wider availability will follow."],
-    ["How does CashNear protect users?", "Verified operators only, commercial locations only, exact pickup revealed after acceptance, time-limited transaction codes and in-app incident reporting."],
+    [
+      "Can I get cash through CashNear now?",
+      "Not yet. We are checking and approving shops in Johannesburg. We will let you know when cash requests open.",
+    ],
+    [
+      "How will I get cash?",
+      "Tell us how much you need. A checked shop near you can accept your request. You will see the fee before you go.",
+    ],
+    [
+      "Will I see the fee first?",
+      "Yes. When cash requests open, you will see the fee before you agree.",
+    ],
+    ["Why does CashNear check shops?", "We check every shop before it can help customers."],
+    [
+      "Where will CashNear start?",
+      "CashNear will start in Johannesburg. More places can be added later.",
+    ],
+    ["Can any shop join?", "No. We check the business and its documents before approval."],
   ];
   return (
     <section id="faq" className="border-b border-border">
@@ -488,16 +521,15 @@ function SiteFooter() {
         <div className="md:col-span-2">
           <Wordmark />
           <p className="mt-4 max-w-[40ch] text-[13px] leading-relaxed text-muted-foreground">
-            CashNear is preparing a controlled cash-access pilot in Johannesburg, South Africa. Not
-            a financial services provider. Payment is completed directly with the verified operator.
+            Find cash nearby. See the fee before you go. Cash requests are not open yet.
           </p>
         </div>
         <FooterCol
           title="Product"
           links={[
             ["Sign in", "/auth"],
-            ["Operator application", "/auth"],
-            ["Safety", "#safety"],
+            ["Register my business", "/auth"],
+            ["Trust", "#safety"],
             ["FAQ", "#faq"],
           ]}
         />
@@ -513,20 +545,14 @@ function SiteFooter() {
       <div className="border-t border-border">
         <Container className="flex flex-col items-start justify-between gap-2 py-6 text-[12px] text-muted-foreground md:flex-row md:items-center">
           <span>© {new Date().getFullYear()} CashNear. All rights reserved.</span>
-          <span>Controlled pilot · Johannesburg, South Africa.</span>
+          <span>CashNear · Johannesburg, South Africa</span>
         </Container>
       </div>
     </footer>
   );
 }
 
-function FooterCol({
-  title,
-  links,
-}: {
-  title: string;
-  links: [string, string][];
-}) {
+function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
   return (
     <div>
       <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{title}</div>

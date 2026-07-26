@@ -5,7 +5,7 @@ export const Route = createFileRoute("/legal/privacy")({
   head: () => ({
     meta: [
       { title: "Privacy · CashNear" },
-      { name: "description", content: "CashNear pilot privacy notice." },
+      { name: "description", content: "CashNear privacy notice." },
     ],
   }),
   component: () => (
@@ -16,11 +16,16 @@ export const Route = createFileRoute("/legal/privacy")({
         </Link>
         <Eyebrow>Legal</Eyebrow>
         <Display className="text-[44px]">Privacy notice.</Display>
-        <Muted>Pilot version. Governed by South African POPIA.</Muted>
+        <Muted>Governed by South African POPIA.</Muted>
+        <div className="rounded-2xl border border-border-strong bg-surface p-5 text-[14px] leading-relaxed text-muted-foreground">
+          <span className="text-foreground">In simple words: </span>
+          This page explains what information we collect, why we need it and how we use it. Read the
+          full details below.
+        </div>
         <Body>
-          CashNear collects identification, contact, and business-verification information solely
-          to verify pilot participants, prevent fraud, and enable safe cash matching. Verification
-          documents are stored privately and accessible only to CashNear operations reviewers.
+          CashNear collects identification, contact, and business-verification information solely to
+          verify participants, prevent fraud, and enable safe cash matching. Verification documents
+          are stored privately and accessible only to CashNear operations reviewers.
         </Body>
       </Screen>
     </AppShell>

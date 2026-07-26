@@ -21,11 +21,13 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedCustomerRouteImport } from './routes/_authenticated/customer'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedOperatorDashboardRouteImport } from './routes/_authenticated/operator.dashboard'
 import { Route as AuthenticatedOperatorApplyRouteImport } from './routes/_authenticated/operator.apply'
 import { Route as AuthenticatedAdminOperatorsRouteImport } from './routes/_authenticated/admin.operators'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin.customers'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
+import { Route as AuthenticatedAdminOperatorsIndexRouteImport } from './routes/_authenticated/admin.operators.index'
 import { Route as AuthenticatedAdminOperatorsIdRouteImport } from './routes/_authenticated/admin.operators.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -87,6 +89,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedOperatorDashboardRoute =
   AuthenticatedOperatorDashboardRouteImport.update({
     id: '/operator/dashboard',
@@ -116,6 +123,12 @@ const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminOperatorsIndexRoute =
+  AuthenticatedAdminOperatorsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminOperatorsRoute,
+  } as any)
 const AuthenticatedAdminOperatorsIdRoute =
   AuthenticatedAdminOperatorsIdRouteImport.update({
     id: '/$id',
@@ -140,7 +153,9 @@ export interface FileRoutesByFullPath {
   '/admin/operators': typeof AuthenticatedAdminOperatorsRouteWithChildren
   '/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/operators/$id': typeof AuthenticatedAdminOperatorsIdRoute
+  '/admin/operators/': typeof AuthenticatedAdminOperatorsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -148,7 +163,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/customer': typeof AuthenticatedCustomerRoute
   '/home': typeof AuthenticatedHomeRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -156,10 +170,11 @@ export interface FileRoutesByTo {
   '/legal/terms': typeof LegalTermsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
-  '/admin/operators': typeof AuthenticatedAdminOperatorsRouteWithChildren
   '/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/operators/$id': typeof AuthenticatedAdminOperatorsIdRoute
+  '/admin/operators': typeof AuthenticatedAdminOperatorsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -180,7 +195,9 @@ export interface FileRoutesById {
   '/_authenticated/admin/operators': typeof AuthenticatedAdminOperatorsRouteWithChildren
   '/_authenticated/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/_authenticated/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/operators/$id': typeof AuthenticatedAdminOperatorsIdRoute
+  '/_authenticated/admin/operators/': typeof AuthenticatedAdminOperatorsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -201,7 +218,9 @@ export interface FileRouteTypes {
     | '/admin/operators'
     | '/operator/apply'
     | '/operator/dashboard'
+    | '/admin/'
     | '/admin/operators/$id'
+    | '/admin/operators/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -209,7 +228,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
-    | '/admin'
     | '/customer'
     | '/home'
     | '/onboarding'
@@ -217,10 +235,11 @@ export interface FileRouteTypes {
     | '/legal/terms'
     | '/admin/audit'
     | '/admin/customers'
-    | '/admin/operators'
     | '/operator/apply'
     | '/operator/dashboard'
+    | '/admin'
     | '/admin/operators/$id'
+    | '/admin/operators'
   id:
     | '__root__'
     | '/'
@@ -240,7 +259,9 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/operators'
     | '/_authenticated/operator/apply'
     | '/_authenticated/operator/dashboard'
+    | '/_authenticated/admin/'
     | '/_authenticated/admin/operators/$id'
+    | '/_authenticated/admin/operators/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -340,6 +361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/operator/dashboard': {
       id: '/_authenticated/operator/dashboard'
       path: '/operator/dashboard'
@@ -375,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/operators/': {
+      id: '/_authenticated/admin/operators/'
+      path: '/'
+      fullPath: '/admin/operators/'
+      preLoaderRoute: typeof AuthenticatedAdminOperatorsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminOperatorsRoute
+    }
     '/_authenticated/admin/operators/$id': {
       id: '/_authenticated/admin/operators/$id'
       path: '/$id'
@@ -387,11 +422,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminOperatorsRouteChildren {
   AuthenticatedAdminOperatorsIdRoute: typeof AuthenticatedAdminOperatorsIdRoute
+  AuthenticatedAdminOperatorsIndexRoute: typeof AuthenticatedAdminOperatorsIndexRoute
 }
 
 const AuthenticatedAdminOperatorsRouteChildren: AuthenticatedAdminOperatorsRouteChildren =
   {
     AuthenticatedAdminOperatorsIdRoute: AuthenticatedAdminOperatorsIdRoute,
+    AuthenticatedAdminOperatorsIndexRoute:
+      AuthenticatedAdminOperatorsIndexRoute,
   }
 
 const AuthenticatedAdminOperatorsRouteWithChildren =
@@ -403,6 +441,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminOperatorsRoute: typeof AuthenticatedAdminOperatorsRouteWithChildren
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
@@ -410,6 +449,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
   AuthenticatedAdminOperatorsRoute:
     AuthenticatedAdminOperatorsRouteWithChildren,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =

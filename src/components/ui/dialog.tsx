@@ -42,6 +42,11 @@ const DialogContent = React.forwardRef<
         className,
       )}
       {...props}
+      // Radix's Content primitive doesn't set this itself (confirmed against
+      // the installed @radix-ui/react-dialog build) -- spread after `...props`
+      // so every dialog built on this wrapper always exposes it, regardless
+      // of what the caller passes.
+      aria-modal="true"
     >
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">

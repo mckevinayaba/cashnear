@@ -37,7 +37,7 @@ function ResetPasswordPage() {
     });
     setBusy(false);
     if (error) setErr(error.message);
-    else setMsg("If that email exists, a reset link is on the way.");
+    else setMsg("If that email has an account, we sent a link to it.");
   };
 
   const update = async (e: React.FormEvent) => {
@@ -62,7 +62,7 @@ function ResetPasswordPage() {
         <div>
           <Eyebrow>Password</Eyebrow>
           <Display className="mt-4 text-[44px]">
-            {mode === "request" ? "Reset it." : "Set new."}
+            {mode === "request" ? "Reset it." : "Choose new."}
           </Display>
           <Muted className="mt-3 max-w-[34ch]">
             {mode === "request"

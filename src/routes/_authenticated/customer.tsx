@@ -44,11 +44,7 @@ function Customer() {
     if (!userData.user) return;
     const [p, c] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userData.user.id).maybeSingle(),
-      supabase
-        .from("customer_profiles")
-        .select("*")
-        .eq("user_id", userData.user.id)
-        .maybeSingle(),
+      supabase.from("customer_profiles").select("*").eq("user_id", userData.user.id).maybeSingle(),
     ]);
     setProfile(p.data);
     setCustomer(c.data);
@@ -109,12 +105,11 @@ function Customer() {
           <CardBody className="flex flex-col gap-3">
             <Eyebrow>Also available</Eyebrow>
             <Body className="text-[14px] text-muted-foreground">
-              Run a verified business with a card machine? You may qualify to join the CashNear
-              operator network.
+              Do you own a shop with a card machine? You can register your business too.
             </Body>
             <Link to="/operator/apply">
               <Button variant="ghost" fullWidth>
-                Apply as an operator →
+                Register my business →
               </Button>
             </Link>
           </CardBody>
@@ -138,25 +133,24 @@ function VerificationSummary({
   const s = STATUS_COPY[status] ?? STATUS_COPY.unverified;
   const primaryLabel =
     status === "rejected"
-      ? "Update my information"
+      ? "Update my details"
       : status === "pending"
-        ? "View submission"
-        : "Start verification";
+        ? "View my details"
+        : "Send my details";
 
   const heading =
     status === "pending"
-      ? "We're reviewing your details."
+      ? "We are checking your details."
       : status === "rejected"
-        ? "We need a little more information."
-        : "Complete your verification.";
+        ? "We still need more information."
+        : "Check your details.";
 
   const body =
     status === "pending"
-      ? "Our operations team is reviewing your submission. Verification is typically completed within one business day."
+      ? "We are checking your details. This usually takes one business day."
       : status === "rejected"
-        ? reviewNotes ||
-          "Please review the details you submitted and try again with a clearer document."
-        : "Verification helps CashNear protect customers and operators before cash requests are enabled.";
+        ? reviewNotes || "Please check your details and try again with a clearer document."
+        : "We check your details to keep everyone safe before cash requests open.";
 
   return (
     <>
@@ -176,8 +170,8 @@ function VerificationSummary({
 
           <ul className="flex flex-col gap-3 text-[14px] text-muted-foreground">
             <Line done={status !== "unverified"}>Account created</Line>
-            <Line done={status === "pending" || status === "approved"}>Identity submitted</Line>
-            <Line done={status === "approved"}>Manual review complete</Line>
+            <Line done={status === "pending" || status === "approved"}>Details sent</Line>
+            <Line done={status === "approved"}>Approved</Line>
           </ul>
 
           {status !== "pending" ? (
@@ -186,7 +180,7 @@ function VerificationSummary({
             </Button>
           ) : (
             <Button variant="secondary" disabled size="lg">
-              Submitted — awaiting review
+              Sent — we are checking
             </Button>
           )}
         </CardBody>
@@ -200,10 +194,7 @@ function ProgressBar({ status }: { status: string }) {
     status === "approved" ? 100 : status === "pending" ? 66 : status === "rejected" ? 33 : 12;
   return (
     <div className="h-1 w-full overflow-hidden rounded-full bg-surface-2">
-      <div
-        className="h-full bg-gold transition-all"
-        style={{ width: `${pct}%` }}
-      />
+      <div className="h-full bg-gold transition-all" style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -213,7 +204,9 @@ function Line({ done, children }: { done: boolean; children: React.ReactNode }) 
     <li className="flex items-center gap-3">
       <span
         className={`inline-flex h-4 w-4 items-center justify-center rounded-full border ${
-          done ? "border-success bg-success/20 text-success" : "border-border-strong text-muted-foreground"
+          done
+            ? "border-success bg-success/20 text-success"
+            : "border-border-strong text-muted-foreground"
         } text-[10px]`}
       >
         {done ? "✓" : ""}
@@ -233,7 +226,7 @@ function VerifiedHome() {
       <div>
         <Display className="text-[44px]">Need cash nearby?</Display>
         <Muted className="mt-3 max-w-[34ch]">
-          Choose an amount to request. Cash requests will open when the Johannesburg pilot begins.
+          Cash requests are not open yet. We are checking shops in Johannesburg.
         </Muted>
       </div>
 
@@ -266,7 +259,7 @@ function VerifiedHome() {
             ))}
           </div>
           <Button disabled size="lg">
-            Cash requests open when the Johannesburg pilot begins
+            Cash requests are not open yet
           </Button>
         </CardBody>
       </Card>
@@ -297,11 +290,7 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
   const [selfiePath, setSelfiePath] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
 
-  const upload = async (
-    file: File,
-    kind: "id" | "selfie",
-    setPath: (p: string) => void,
-  ) => {
+  const upload = async (file: File, kind: "id" | "selfie", setPath: (p: string) => void) => {
     setUploading(true);
     setError(null);
     try {
@@ -315,7 +304,9 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
       if (error) throw error;
       setPath(path);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed.");
+      setError(
+        e instanceof Error ? e.message : "We could not send your document. Please try again.",
+      );
     } finally {
       setUploading(false);
     }
@@ -352,7 +343,7 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
       });
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Submission failed.");
+      setError(err instanceof Error ? err.message : "We could not do that. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -361,14 +352,20 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div>
-        <Eyebrow>Identity verification</Eyebrow>
+        <Eyebrow>Your details</Eyebrow>
         <Display className="mt-3 text-[36px]">Tell us who you are.</Display>
         <Muted className="mt-2 max-w-[36ch]">
-          Your details are reviewed manually by our operations team and are never shared publicly.
+          A person checks your details by hand. We never share them in public.
         </Muted>
       </div>
 
-      <Field label="Full legal name" value={fullName} onChange={setFullName} placeholder="As on your ID" autoComplete="name" />
+      <Field
+        label="Full legal name"
+        value={fullName}
+        onChange={setFullName}
+        placeholder="As on your ID"
+        autoComplete="name"
+      />
       <Field
         label="South African mobile number"
         value={mobile}
@@ -379,7 +376,9 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
       />
 
       <label className="flex flex-col gap-2">
-        <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Identity document</span>
+        <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          Identity document
+        </span>
         <select
           value={idType}
           onChange={(e) => setIdType(e.target.value as typeof idType)}
@@ -392,7 +391,12 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
         </select>
       </label>
 
-      <Field label="Document number" value={idNumber} onChange={setIdNumber} placeholder="ID / Passport number" />
+      <Field
+        label="Document number"
+        value={idNumber}
+        onChange={setIdNumber}
+        placeholder="ID / Passport number"
+      />
 
       <FileField
         label="Upload document photo"
@@ -415,8 +419,8 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
           className="mt-1"
         />
         <span>
-          I confirm the information provided is accurate and I consent to CashNear processing it for
-          identity verification under the Protection of Personal Information Act.
+          I agree this information is correct. I also agree that CashNear can check it under South
+          Africa's privacy law (POPIA).
         </span>
       </label>
 
@@ -428,10 +432,10 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
 
       <div className="flex flex-col gap-3">
         <Button type="submit" size="lg" disabled={!canSubmit}>
-          {busy ? "Submitting…" : "Submit for review"}
+          {busy ? "Sending…" : "Send my details"}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-          Cancel
+          No, go back
         </Button>
       </div>
     </form>

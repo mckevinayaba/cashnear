@@ -5,7 +5,7 @@ export const Route = createFileRoute("/legal/terms")({
   head: () => ({
     meta: [
       { title: "Terms · CashNear" },
-      { name: "description", content: "CashNear pilot terms of service." },
+      { name: "description", content: "CashNear terms of service." },
     ],
   }),
   component: () => (
@@ -16,11 +16,17 @@ export const Route = createFileRoute("/legal/terms")({
         </Link>
         <Eyebrow>Legal</Eyebrow>
         <Display className="text-[44px]">Terms of service.</Display>
-        <Muted>Pilot version. South Africa only.</Muted>
+        <Muted>South Africa only.</Muted>
+        <div className="rounded-2xl border border-border-strong bg-surface p-5 text-[14px] leading-relaxed text-muted-foreground">
+          <span className="text-foreground">In simple words: </span>
+          These are the rules for using CashNear. They explain what you can expect from us and what
+          we expect from you. Read the full rules below.
+        </div>
         <Body>
-          CashNear operates a controlled pilot enabling verified customers to request cash from
-          verified neighbourhood operators. Participation is limited to invited users during the
-          pilot phase. Full terms will be published prior to public launch.
+          CashNear is building a service that will enable approved customers to request cash from
+          approved neighbourhood businesses when cash-request services become available.
+          Participation is limited to invited users during this early phase. Full terms will be
+          published prior to public launch.
         </Body>
       </Screen>
     </AppShell>

@@ -20,6 +20,14 @@ const ENTITY_TYPES = [
   "user",
   "pilot_configuration",
 ] as const;
+// Display labels only -- entity_type values above must stay exactly as the
+// database's audit_logs.entity_type strings, since they're used directly in
+// the .eq("entity_type", ...) filter below. "pilot_configuration" is the
+// table name (an internal identifier, left untouched); this is only the
+// user-facing label shown in the filter dropdown.
+const ENTITY_TYPE_LABELS: Partial<Record<(typeof ENTITY_TYPES)[number], string>> = {
+  pilot_configuration: "Platform settings",
+};
 const RANGES = [
   { value: "24h", label: "Last 24 hours", hours: 24 },
   { value: "7d", label: "Last 7 days", hours: 24 * 7 },
@@ -100,7 +108,7 @@ function AdminAudit() {
           >
             {ENTITY_TYPES.map((t) => (
               <option key={t} value={t}>
-                {t === "all" ? "All entities" : t.replace("_", " ")}
+                {t === "all" ? "All entities" : (ENTITY_TYPE_LABELS[t] ?? t.replace("_", " "))}
               </option>
             ))}
           </select>

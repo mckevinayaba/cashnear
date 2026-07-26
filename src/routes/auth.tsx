@@ -10,7 +10,7 @@ export const Route = createFileRoute("/auth")({
       { title: "Sign in · CashNear" },
       {
         name: "description",
-        content: "Sign in or create your CashNear account to access neighbourhood cash.",
+        content: "Sign in or create your CashNear account.",
       },
     ],
   }),
@@ -68,9 +68,9 @@ function AuthPage() {
       }
       navigate({ to: "/home", replace: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      const msg = err instanceof Error ? err.message : "We could not do that. Please try again.";
       if (/invalid login credentials/i.test(msg) && mode === "signin") {
-        setError("Email or password is incorrect. Try again, or reset your password.");
+        setError("Your email or password is not correct. Try again, or reset your password.");
       } else {
         setError(msg);
       }
@@ -91,12 +91,10 @@ function AuthPage() {
         <div>
           <Eyebrow>{mode === "signin" ? "Welcome back" : "Create account"}</Eyebrow>
           <Display className="mt-4 text-[44px]">
-            {mode === "signin" ? "Sign in." : "Join the pilot."}
+            {mode === "signin" ? "Sign in." : "Create your CashNear account"}
           </Display>
           <Muted className="mt-3 max-w-[34ch]">
-            {mode === "signin"
-              ? "Access your CashNear account."
-              : "Request cash, or apply to become a neighbourhood operator."}
+            {mode === "signin" ? "Check your account." : "Create an account to get started."}
           </Muted>
         </div>
 
@@ -157,7 +155,7 @@ function AuthPage() {
         </form>
 
         <Body className="mt-auto pt-8 text-[12px] text-muted-foreground">
-          Pilot access · South Africa. By continuing you agree to CashNear's{" "}
+          By continuing, you agree to our{" "}
           <Link to="/legal/terms" className="underline underline-offset-4">
             Terms
           </Link>{" "}
@@ -165,7 +163,7 @@ function AuthPage() {
           <Link to="/legal/privacy" className="underline underline-offset-4">
             Privacy Notice
           </Link>
-          .
+          . These explain our rules and how we use your information.
         </Body>
       </Screen>
     </AppShell>

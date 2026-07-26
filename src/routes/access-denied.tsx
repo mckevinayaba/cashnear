@@ -13,10 +13,9 @@ function AccessDenied() {
     <AppShell hideNav>
       <Screen>
         <Eyebrow>Restricted</Eyebrow>
-        <Display className="text-[40px]">You don't have access to this page.</Display>
+        <Display className="text-[40px]">You can't open this page.</Display>
         <Muted className="max-w-[38ch]">
-          This area is limited to CashNear operations staff. If you believe you should have access,
-          contact your administrator.
+          This page is for CashNear staff only. If you think this is wrong, contact us.
         </Muted>
         <Link to="/home">
           <Button size="lg">Back to your account</Button>

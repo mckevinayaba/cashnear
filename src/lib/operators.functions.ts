@@ -2,54 +2,125 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { applicantCanEdit } from "@/lib/operator-application-state";
+import {
+  requiresImmigrationStatusDocument,
+  getCompletionChecklist,
+  isApplicationComplete,
+} from "@/lib/operator-document-requirements";
 
-const applicationSchema = z.object({
-  business_id: z.string().uuid().optional(),
-  legal_name: z.string().trim().min(2).max(200),
-  trading_name: z.string().trim().min(2).max(200),
-  business_type: z.string().trim().min(2).max(120),
-  registration_number: z.string().trim().max(80).optional().or(z.literal("")),
-  tax_number: z.string().trim().max(80).optional().or(z.literal("")),
-  years_operating: z.number().int().min(0).max(200).optional(),
-  description: z.string().trim().max(1000).optional().or(z.literal("")),
-  street_address: z.string().trim().min(3).max(200),
-  suburb: z.string().trim().min(2).max(120),
-  city: z.string().trim().min(2).max(120),
-  province: z.enum([
-    "gauteng",
-    "western_cape",
-    "kwazulu_natal",
-    "eastern_cape",
-    "free_state",
-    "limpopo",
-    "mpumalanga",
-    "north_west",
-    "northern_cape",
-  ]),
-  postal_code: z.string().trim().min(4).max(10),
-  premises_type: z.string().trim().max(80).optional().or(z.literal("")),
-  terminal_provider: z
-    .enum([
-      "yoco",
-      "ikhokha",
-      "fnb",
-      "standard_bank",
-      "nedbank",
-      "absa",
-      "kazang",
-      "flash",
+const applicationSchema = z
+  .object({
+    business_id: z.string().uuid().optional(),
+    legal_name: z.string().trim().min(2).max(200),
+    trading_name: z.string().trim().min(2).max(200),
+    business_type: z.string().trim().min(2).max(120),
+    business_structure: z.enum([
+      "sole_trader",
+      "registered_company",
+      "close_corporation",
+      "partnership",
+      "cooperative",
       "other",
-    ])
-    .optional(),
-  terminal_model: z.string().trim().max(120).optional().or(z.literal("")),
-  representative_name: z.string().trim().min(2).max(200),
-  representative_id_number: z.string().trim().min(6).max(30),
-  representative_mobile: z.string().trim().min(6).max(20),
-  representative_email: z.string().trim().email().max(255),
-  representative_relationship: z.string().trim().max(120).optional().or(z.literal("")),
-  agreements_accepted: z.boolean().refine((v) => v === true, "Agreements must be accepted."),
-  submit: z.boolean().default(false),
-});
+    ]),
+    registration_number: z.string().trim().max(80).optional().or(z.literal("")),
+    tax_number: z.string().trim().max(80).optional().or(z.literal("")),
+    years_operating: z.number().int().min(0).max(200).optional(),
+    description: z.string().trim().max(1000).optional().or(z.literal("")),
+    street_address: z.string().trim().min(3).max(200),
+    suburb: z.string().trim().min(2).max(120),
+    city: z.string().trim().min(2).max(120),
+    province: z.enum([
+      "gauteng",
+      "western_cape",
+      "kwazulu_natal",
+      "eastern_cape",
+      "free_state",
+      "limpopo",
+      "mpumalanga",
+      "north_west",
+      "northern_cape",
+    ]),
+    postal_code: z.string().trim().min(4).max(10),
+    premises_type: z.string().trim().max(80).optional().or(z.literal("")),
+    terminal_provider: z
+      .enum([
+        "yoco",
+        "ikhokha",
+        "fnb",
+        "standard_bank",
+        "nedbank",
+        "absa",
+        "kazang",
+        "flash",
+        "other",
+      ])
+      .optional(),
+    terminal_model: z.string().trim().max(120).optional().or(z.literal("")),
+    representative_name: z.string().trim().min(2).max(200),
+    // Generic identity number field, reused across every identity_document_type
+    // (SA ID number / passport number / permit number) -- deliberately no
+    // format-specific regex here, since a 13-digit-SA-ID pattern would
+    // reject every foreign-national document type. Format plausibility is
+    // the field's own min/max length only.
+    representative_id_type: z.enum([
+      "sa_id",
+      "passport",
+      "asylum_permit",
+      "refugee_permit",
+      "permanent_residence_permit",
+    ]),
+    representative_id_number: z.string().trim().min(4).max(30),
+    representative_id_country: z.string().trim().max(120).optional().or(z.literal("")),
+    representative_id_expiry: z.string().trim().max(20).optional().or(z.literal("")),
+    representative_immigration_status_type: z.string().trim().max(200).optional().or(z.literal("")),
+    representative_immigration_status_number: z
+      .string()
+      .trim()
+      .max(80)
+      .optional()
+      .or(z.literal("")),
+    representative_immigration_status_expiry: z
+      .string()
+      .trim()
+      .max(20)
+      .optional()
+      .or(z.literal("")),
+    // No SA-only format restriction -- length bounds only, wide enough for
+    // international numbers with a country code (e.g. +44 7911 123456).
+    // No normalisation standard exists in this project yet; stored as
+    // entered. See implementation report for the customer-flow SA-only
+    // regex flagged as a separate, unrelated review item.
+    representative_mobile: z.string().trim().min(6).max(25),
+    representative_email: z.string().trim().email().max(255),
+    representative_relationship: z.string().trim().max(120).optional().or(z.literal("")),
+    agreements_accepted: z.boolean().refine((v) => v === true, "Agreements must be accepted."),
+    submit: z.boolean().default(false),
+  })
+  .superRefine((val, ctx) => {
+    if (requiresImmigrationStatusDocument(val.representative_id_type)) {
+      if (!val.representative_immigration_status_type?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["representative_immigration_status_type"],
+          message: "Tell us what document shows you may work or run a business in South Africa.",
+        });
+      }
+      if (!val.representative_immigration_status_number?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["representative_immigration_status_number"],
+          message: "Enter the document number.",
+        });
+      }
+      if (!val.representative_immigration_status_expiry?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["representative_immigration_status_expiry"],
+          message: "Enter the expiry date.",
+        });
+      }
+    }
+  });
 
 export type OperatorApplicationInput = z.infer<typeof applicationSchema>;
 
@@ -60,7 +131,19 @@ export type OperatorApplicationInput = z.infer<typeof applicationSchema>;
  */
 export const upsertOperatorApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => applicationSchema.parse(raw))
+  .inputValidator((raw: unknown) => {
+    const result = applicationSchema.safeParse(raw);
+    if (!result.success) {
+      // The default createServerFn error path serializes the whole ZodError
+      // (a JSON array of every issue) into the client-side Error's message,
+      // which the UI would otherwise render verbatim -- surface just the
+      // first plain-language issue instead, matching every other error
+      // shown on this form.
+      const first = result.error.issues[0];
+      throw new Error(first?.message ?? "Please check the highlighted fields and try again.");
+    }
+    return result.data;
+  })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { submit, agreements_accepted, business_id, ...fields } = data;
@@ -74,10 +157,10 @@ export const upsertOperatorApplication = createServerFn({ method: "POST" })
     // service-role client, only after validating it against the current
     // state (C-03).
     const contentFields = {
-      owner_id: userId,
       legal_name: fields.legal_name,
       trading_name: fields.trading_name,
       business_type: fields.business_type,
+      business_structure: fields.business_structure,
       registration_number: fields.registration_number || null,
       tax_number: fields.tax_number || null,
       years_operating: fields.years_operating ?? null,
@@ -91,7 +174,15 @@ export const upsertOperatorApplication = createServerFn({ method: "POST" })
       terminal_provider: fields.terminal_provider ?? null,
       terminal_model: fields.terminal_model || null,
       representative_name: fields.representative_name,
+      representative_id_type: fields.representative_id_type,
       representative_id_number: fields.representative_id_number,
+      representative_id_country: fields.representative_id_country || null,
+      representative_id_expiry: fields.representative_id_expiry || null,
+      representative_immigration_status_type: fields.representative_immigration_status_type || null,
+      representative_immigration_status_number:
+        fields.representative_immigration_status_number || null,
+      representative_immigration_status_expiry:
+        fields.representative_immigration_status_expiry || null,
       representative_mobile: fields.representative_mobile,
       representative_email: fields.representative_email,
       representative_relationship: fields.representative_relationship || null,
@@ -131,14 +222,52 @@ export const upsertOperatorApplication = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     } else {
       // application_status defaults to 'draft' at the database level; the
-      // insert never needs to set it explicitly.
+      // insert never needs to set it explicitly. owner_id is set only here,
+      // on creation -- it is deliberately absent from contentFields since
+      // `authenticated` was never granted column-level UPDATE on owner_id
+      // (nor should it be: changing ownership of an existing application is
+      // a different, more sensitive operation than editing its content).
       const { data: inserted, error } = await supabase
         .from("operator_businesses")
-        .insert(contentFields)
+        .insert({ ...contentFields, owner_id: userId })
         .select("id")
         .single();
       if (error) throw new Error(error.message);
       businessId = inserted.id;
+    }
+
+    // The server is the source of truth for submission completeness --
+    // the client-side checklist is a UX convenience, not a substitute for
+    // this check. A draft can be saved incomplete; a submission cannot.
+    if (submit) {
+      const { data: uploadedDocs, error: docsErr } = await supabase
+        .from("operator_documents")
+        .select("doc_type")
+        .eq("business_id", businessId);
+      if (docsErr) throw new Error(docsErr.message);
+
+      const checklist = getCompletionChecklist({
+        business: {
+          legal_name: fields.legal_name,
+          trading_name: fields.trading_name,
+          business_type: fields.business_type,
+          street_address: fields.street_address,
+          suburb: fields.suburb,
+          city: fields.city,
+          province: fields.province,
+          postal_code: fields.postal_code,
+          representative_name: fields.representative_name,
+          representative_id_number: fields.representative_id_number,
+          representative_mobile: fields.representative_mobile,
+          representative_email: fields.representative_email,
+        },
+        identityType: fields.representative_id_type,
+        businessStructure: fields.business_structure,
+        uploadedDocTypes: (uploadedDocs ?? []).map((d) => d.doc_type),
+      });
+      if (!isApplicationComplete(checklist)) {
+        throw new Error("We still need some documents. Check the list above.");
+      }
     }
 
     const nextStatus = submit ? ("submitted" as const) : ("draft" as const);

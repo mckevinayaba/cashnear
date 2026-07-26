@@ -17,20 +17,23 @@ import type { Database } from "@/integrations/supabase/types";
 type Business = Database["public"]["Tables"]["operator_businesses"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/operator/dashboard")({
-  head: () => ({ meta: [{ title: "Operator · CashNear" }] }),
+  head: () => ({ meta: [{ title: "Your business · CashNear" }] }),
   component: OperatorDashboard,
 });
 
-const STATUS_LABEL: Record<string, { label: string; tone: "muted" | "success" | "warn" | "danger" }> = {
+const STATUS_LABEL: Record<
+  string,
+  { label: string; tone: "muted" | "success" | "warn" | "danger" }
+> = {
   draft: { label: "Draft", tone: "muted" },
-  submitted: { label: "Submitted", tone: "warn" },
-  under_review: { label: "Under review", tone: "warn" },
-  info_requested: { label: "More info requested", tone: "warn" },
-  site_verification_required: { label: "Site visit required", tone: "warn" },
-  approved: { label: "Approved & live", tone: "success" },
-  rejected: { label: "Rejected", tone: "danger" },
-  suspended: { label: "Suspended", tone: "danger" },
-  deactivated: { label: "Deactivated", tone: "danger" },
+  submitted: { label: "Sent", tone: "warn" },
+  under_review: { label: "We are checking", tone: "warn" },
+  info_requested: { label: "More info needed", tone: "warn" },
+  site_verification_required: { label: "Visit needed", tone: "warn" },
+  approved: { label: "Approved", tone: "success" },
+  rejected: { label: "Not approved", tone: "danger" },
+  suspended: { label: "Paused", tone: "danger" },
+  deactivated: { label: "Closed", tone: "danger" },
 };
 
 function OperatorDashboard() {
@@ -73,10 +76,10 @@ function OperatorDashboard() {
     return (
       <AppShell hideNav>
         <Screen>
-          <Eyebrow>Operator</Eyebrow>
-          <Display className="text-[42px]">No application yet.</Display>
+          <Eyebrow>Your business</Eyebrow>
+          <Display className="text-[42px]">Finish registering your business.</Display>
           <Link to="/operator/apply">
-            <Button size="lg">Start application</Button>
+            <Button size="lg">Register my business</Button>
           </Link>
         </Screen>
       </AppShell>
@@ -91,7 +94,7 @@ function OperatorDashboard() {
     <AppShell hideNav>
       <Screen>
         <header className="flex items-center justify-between pt-2">
-          <Eyebrow>Operator</Eyebrow>
+          <Eyebrow>Your business</Eyebrow>
           <button
             onClick={signOut}
             className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
@@ -101,7 +104,7 @@ function OperatorDashboard() {
         </header>
 
         <div>
-          <Display className="text-[42px]">{business.trading_name ?? "Your operator"}.</Display>
+          <Display className="text-[42px]">{business.trading_name ?? "Your business"}.</Display>
           <Muted className="mt-2">
             {business.suburb ?? ""}
             {business.city ? `, ${business.city}` : ""}
@@ -111,7 +114,7 @@ function OperatorDashboard() {
         <Card variant="lift">
           <CardBody className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <Eyebrow>Application status</Eyebrow>
+              <Eyebrow>Status</Eyebrow>
               <span
                 className={
                   status.tone === "success"
@@ -128,22 +131,22 @@ function OperatorDashboard() {
             </div>
             {business.review_notes ? (
               <Body className="text-[14px] text-muted-foreground">
-                Reviewer note: {business.review_notes}
+                Note from CashNear: {business.review_notes}
               </Body>
             ) : null}
             {business.application_status === "approved" ? (
               <Body className="text-[14px] text-muted-foreground">
-                You are live in the pilot. Matching and transaction flows unlock in Stage 2.
+                Your business has been approved. Cash requests are not open yet. We will let you
+                know when you can start.
               </Body>
             ) : (
               <Body className="text-[14px] text-muted-foreground">
-                We'll notify you as soon as the operations team completes review — typically within
-                24 hours during pilot hours.
+                We are checking your business. This usually takes 24 hours.
               </Body>
             )}
             {editable ? (
               <Link to="/operator/apply" className="mt-2">
-                <Button fullWidth>Continue application</Button>
+                <Button fullWidth>Continue registering</Button>
               </Link>
             ) : null}
           </CardBody>
@@ -151,9 +154,10 @@ function OperatorDashboard() {
 
         <Card variant="outline">
           <CardBody className="flex flex-col gap-2">
-            <Eyebrow>Coming in Stage 2</Eyebrow>
+            <Eyebrow>Coming soon</Eyebrow>
             <Body className="text-[14px] text-muted-foreground">
-              Availability toggle, incoming cash requests, transaction ledger, and payouts.
+              When cash requests open, you will choose when you're available, see requests, and get
+              paid.
             </Body>
           </CardBody>
         </Card>
