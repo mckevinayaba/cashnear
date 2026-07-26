@@ -8,7 +8,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 const SUPABASE_URL_FALLBACK = "https://cfwylchvtfwtqhfwoefm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY_FALLBACK =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImNmd3lsY2h2dGZ3dHFoZndvZWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMzY0MzEsImV4cCI6MjA5OTkxMjQzMX0.NUGEi8ItO-bdXNhm7TZSX51ls9WnlJ-Nyrx2dTxAxU8";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmd3lsY2h2dGZ3dHFoZndvZWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMzY0MzEsImV4cCI6MjA5OTkxMjQzMX0.NUGEi8ItO-bdXNhm7TZSX51ls9WnlJ-Nyrx2dTxAxU8";
 
 export default defineConfig({
   tanstackStart: {

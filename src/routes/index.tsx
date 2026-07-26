@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,14 +24,45 @@ export const Route = createFileRoute("/")({
 
 function PublicHome() {
   const [signedIn, setSignedIn] = useState(false);
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSignedIn(!!s));
-    return () => sub.subscription.unsubscribe();
+    let mounted = true;
+    let unsubscribe: (() => void) | undefined;
+
+    async function syncAuthState() {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSignedIn(!!data.session);
+
+        const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (mounted) setSignedIn(!!session);
+        });
+        unsubscribe = () => sub.subscription.unsubscribe();
+      } catch (error) {
+        console.warn("[CashNear] Auth status unavailable on the public website.", error);
+        if (mounted) setSignedIn(false);
+      }
+    }
+
+    void syncAuthState();
+
+    return () => {
+      mounted = false;
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.warn("[CashNear] Sign out unavailable on the public website.", error);
+    } finally {
+      setSignedIn(false);
+    }
   };
 
   return (
