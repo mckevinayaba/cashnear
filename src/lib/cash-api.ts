@@ -85,9 +85,9 @@ export function setCashAvailability(args: {
   return call<ShopCashState>(
     supabase.rpc("cash_set_availability", {
       p_business: args.businessId,
-      p_minutes: args.minutes,
-      p_band_cents: args.bandCents,
-      p_small: args.smallNotes,
+      p_minutes: args.minutes ?? undefined,
+      p_band_cents: args.bandCents ?? undefined,
+      p_small: args.smallNotes ?? undefined,
     }),
   );
 }
