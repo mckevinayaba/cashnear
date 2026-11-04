@@ -4,6 +4,8 @@ export type ShopTheme = "day" | "night";
 
 const STORAGE_KEY = "cashnear-shop-theme";
 const DAYLIGHT_CLASS = "theme-daylight";
+const NIGHT_BAR = "#07111D";
+const DAYLIGHT_BAR = "#FAF7F0";
 
 /**
  * The signed-in app opens bright and high-contrast ("daylight"): people use it
@@ -66,6 +68,12 @@ export function useApplyTheme(): void {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle(DAYLIGHT_CLASS, theme === "day");
-    return () => root.classList.remove(DAYLIGHT_CLASS);
+    // The phone's own status bar follows the screen's colour.
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    meta?.setAttribute("content", theme === "day" ? DAYLIGHT_BAR : NIGHT_BAR);
+    return () => {
+      root.classList.remove(DAYLIGHT_CLASS);
+      meta?.setAttribute("content", NIGHT_BAR);
+    };
   }, [theme]);
 }

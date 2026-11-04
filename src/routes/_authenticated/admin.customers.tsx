@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,12 +75,7 @@ function AdminCustomers() {
     <AppShell hideNav desktopWide>
       <Screen>
         <div className="pt-2">
-          <Link
-            to="/admin"
-            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground"
-          >
-            ← Ops
-          </Link>
+          <AdminTabs />
         </div>
         <Eyebrow>Customer verification</Eyebrow>
         <Display className="text-[44px]">KYC review queue.</Display>

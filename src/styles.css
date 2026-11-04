@@ -214,3 +214,11 @@
 @utility animate-fade {
   animation: cn-fade 0.6s ease-out both;
 }
+
+/* Inside the installed app there is no website to read, only the app. */
+@media (display-mode: standalone) {
+  .site-extra,
+  .site-extra-link {
+    display: none !important;
+  }
+}

@@ -874,3 +874,215 @@ describe("activity: a customer's own history", () => {
     expect(row.anon).toBe(false);
   });
 });
+
+describe("management views for the CashNear team", () => {
+  let mgOwner: string;
+  let mgShop: string;
+  const buyers: string[] = [];
+
+  const summary = (who: string, days = 7) =>
+    db.as(who, "authenticated", async (tx) =>
+      j((await tx`select public.cash_admin_summary(${days}::int) as r`)[0].r),
+    );
+  const ledger = (
+    who: string,
+    f: {
+      status?: string | null;
+      search?: string | null;
+      from?: string | null;
+      limit?: number;
+      offset?: number;
+      exportIt?: boolean;
+    } = {},
+  ) =>
+    db.as(who, "authenticated", async (tx) =>
+      j(
+        (
+          await tx`select public.cash_admin_requests(
+            ${f.status ?? null}, ${f.search ?? null}, ${f.from ?? null}::timestamptz, null::timestamptz,
+            ${f.limit ?? 25}::int, ${f.offset ?? 0}::int, ${f.exportIt ?? false}::boolean) as r`
+        )[0].r,
+      ),
+    );
+  const shopsView = (who: string, days = 30) =>
+    db.as(who, "authenticated", async (tx) =>
+      j((await tx`select public.cash_admin_shops(${days}::int) as r`)[0].r),
+    );
+
+  async function seed(
+    customer: string,
+    status: string,
+    amount: number,
+    o: { fee?: number; held?: boolean; reason?: string; ref?: string; agoDays?: number } = {},
+  ) {
+    const created = new Date(Date.now() - (o.agoDays ?? 0) * 86_400_000).toISOString();
+    const held = o.held ? new Date(Date.parse(created) + 30_000).toISOString() : null;
+    const done =
+      status === "completed" ? new Date(Date.parse(created) + 480_000).toISOString() : null;
+    const acceptBy = new Date(Date.parse(created) + 90_000).toISOString();
+    await db.sql`
+      insert into public.cash_requests
+        (customer_id, business_id, amount_cents, rail_id, status, handshake, partner_fee_cents, cashnear_fee_cents,
+         accept_by, held_at, completed_at, closed_reason, shop_reference, idempotency_key, created_at)
+      values
+        (${customer}, ${mgShop}, ${amount}::int, ${RAIL}, ${status}::public.cash_request_status, 'Amber River - Cedar Drum', 1000, ${o.fee ?? 0}::int,
+         ${acceptBy}::timestamptz, ${held}::timestamptz, ${done}::timestamptz,
+         ${o.reason ?? null}, ${o.ref ?? null}, ${crypto.randomUUID()}, ${created}::timestamptz)
+    `;
+  }
+
+  test("only an admin can read any of it; a customer or a shop owner is refused", async () => {
+    mgOwner = await createUser(db.sql, "mg-owner@example.test", "Mg Owner");
+    for (let i = 0; i < 3; i++)
+      buyers.push(await createUser(db.sql, `mg-buyer${i}@example.test`, `Buyer ${i}`));
+    for (const who of [mgOwner, buyers[0], shopOwner]) {
+      await expect(summary(who)).rejects.toThrow("forbidden");
+      await expect(ledger(who)).rejects.toThrow("forbidden");
+      await expect(shopsView(who)).rejects.toThrow("forbidden");
+    }
+    // ops_admin and super_admin are both allowed.
+    await summary(ops);
+    await summary(superAdmin);
+  });
+
+  test("the summary counts exactly what was seeded, and the weekly collections move with it", async () => {
+    mgShop = await insertBusiness(mgOwner, "MgShop Alpha");
+    await db.sql`insert into public.cash_points (business_id, enrolled, latitude, longitude, online, online_until, cash_band_cents)
+                 values (${mgShop}, true, ${LAT}, ${LNG}, true, now() + interval '2 hours', 50000)`;
+    const before = await summary(ops);
+
+    await seed(buyers[0], "completed", 20000, { fee: 150, held: true, ref: "SLIP-ALPHA-1" });
+    await seed(buyers[1], "completed", 10000, { held: true, ref: "SLIP-ALPHA-2" });
+    await seed(buyers[0], "expired", 10000, { reason: "shop_no_response" });
+    await seed(buyers[1], "declined", 10000);
+    await seed(buyers[1], "cancelled", 10000, { reason: "customer_cancelled" });
+    await seed(buyers[2], "needs_review", 30000, { held: true });
+    await seed(buyers[2], "awaiting_shop", 10000);
+    await seed(buyers[0], "completed", 50000, { held: true, agoDays: 40 }); // outside a 7 day window
+
+    const after = await summary(ops);
+    const d = (k: string) => Number(after.window[k]) - Number(before.window[k]);
+    expect(d("requests")).toBe(7);
+    expect(d("collected")).toBe(2);
+    expect(d("collected_cents")).toBe(30000);
+    expect(d("shop_no_answer")).toBe(1);
+    expect(d("declined")).toBe(1);
+    expect(d("cancelled")).toBe(1);
+    expect(d("under_review")).toBe(1);
+    expect(d("in_progress")).toBe(1);
+    expect(d("accepted")).toBe(3);
+    expect(d("cashnear_fees_cents")).toBe(150);
+    expect(d("partner_fees_cents")).toBe(2000);
+    expect(Number(after.week.collected_this_week) - Number(before.week.collected_this_week)).toBe(
+      2,
+    );
+    expect(after.shops.online_now).toBeGreaterThanOrEqual(1);
+    expect(after.daily.length).toBe(7);
+    // The bars add up to the same total.
+    const barTotal = after.daily.reduce(
+      (n: number, x: { requests: number }) => n + Number(x.requests),
+      0,
+    );
+    expect(barTotal).toBe(Number(after.window.requests));
+  });
+
+  test("a longer window includes older requests", async () => {
+    const week = await summary(ops, 7);
+    const quarter = await summary(ops, 90);
+    expect(Number(quarter.window.collected)).toBe(Number(week.window.collected) + 1);
+    expect(quarter.daily.length).toBe(30);
+  });
+
+  test("the ledger lists every transaction newest first, with filters, and a bad status is refused", async () => {
+    const all = await ledger(ops, { search: "MgShop Alpha", limit: 50 });
+    expect(all.total).toBe(8);
+    const times = all.rows.map((r: { created_at: string }) => Date.parse(r.created_at));
+    expect(times).toEqual([...times].sort((a, b) => b - a));
+
+    const done = await ledger(ops, { search: "MgShop Alpha", status: "completed" });
+    expect(done.total).toBe(3);
+    const recent = await ledger(ops, {
+      search: "MgShop Alpha",
+      from: new Date(Date.now() - 7 * 86_400_000).toISOString(),
+    });
+    expect(recent.total).toBe(7);
+    await expect(ledger(ops, { status: "paid_in_full" })).rejects.toThrow("invalid_status");
+  });
+
+  test("search finds a customer, a payment slip or a request, and a typed % is not a wildcard", async () => {
+    expect((await ledger(ops, { search: "mg-buyer1@example.test" })).total).toBe(3);
+    expect((await ledger(ops, { search: "SLIP-ALPHA-2" })).total).toBe(1);
+    const some = (await ledger(ops, { search: "MgShop Alpha" })).rows[0];
+    expect((await ledger(ops, { search: some.id.slice(0, 8) })).total).toBe(1);
+    expect((await ledger(ops, { search: "%" })).total).toBe(0);
+    expect((await ledger(ops, { search: "_" })).total).toBe(0);
+  });
+
+  test("paging works, and a row carries the amounts and people but never a code or the two words", async () => {
+    const page1 = await ledger(ops, { search: "MgShop Alpha", limit: 3, offset: 0 });
+    const page2 = await ledger(ops, { search: "MgShop Alpha", limit: 3, offset: 3 });
+    expect(page1.rows.length).toBe(3);
+    expect(page2.rows.length).toBe(3);
+    const ids = new Set([...page1.rows, ...page2.rows].map((r: { id: string }) => r.id));
+    expect(ids.size).toBe(6);
+
+    const row = page1.rows[0];
+    expect(Object.keys(row).sort()).toEqual([
+      "accept_seconds",
+      "amount_cents",
+      "cashnear_fee_cents",
+      "closed_reason",
+      "completed_at",
+      "created_at",
+      "customer",
+      "held_at",
+      "id",
+      "partner_fee_cents",
+      "shop",
+      "shop_completed_at",
+      "shop_reference",
+      "status",
+    ]);
+    expect(JSON.stringify(page1)).not.toMatch(/Amber River|Cedar Drum|handshake|"code"/);
+    expect(Object.keys(row.customer).sort()).toEqual(["email", "id", "name"]);
+  });
+
+  test("an export is written to the audit log, and a normal view is not", async () => {
+    const [{ n: before }] =
+      await db.sql`select count(*)::int as n from public.audit_logs where action = 'cash.admin.exported'`;
+    await ledger(ops, { search: "MgShop Alpha" });
+    const [{ n: same }] =
+      await db.sql`select count(*)::int as n from public.audit_logs where action = 'cash.admin.exported'`;
+    expect(same).toBe(before);
+    const out = await ledger(ops, { search: "MgShop Alpha", limit: 500, exportIt: true });
+    expect(out.rows.length).toBe(8);
+    const [{ n: after }] =
+      await db.sql`select count(*)::int as n from public.audit_logs where action = 'cash.admin.exported'`;
+    expect(after).toBe(before + 1);
+    const [log] =
+      await db.sql`select actor_role, metadata from public.audit_logs where action = 'cash.admin.exported' order by created_at desc limit 1`;
+    expect(log.actor_role).toBe("ops_admin");
+    expect(Number(j(log.metadata).rows)).toBe(8);
+  });
+
+  test("a normal view is capped at 100 rows and an export at 2000", async () => {
+    const [{ src }] =
+      await db.sql`select prosrc as src from pg_proc where proname = 'cash_admin_requests'`;
+    expect(src).toMatch(/THEN 2000 ELSE 100/);
+  });
+
+  test("the shop view shows how each enrolled shop did", async () => {
+    const list = await shopsView(ops, 30);
+    const mine = list.find((s: { name: string }) => s.name === "MgShop Alpha");
+    expect(mine.requests).toBe(7);
+    expect(mine.collected).toBe(2);
+    expect(mine.collected_cents).toBe(30000);
+    expect(mine.no_answer).toBe(1);
+    expect(mine.declined).toBe(1);
+    expect(mine.under_review).toBe(1);
+    expect(mine.enrolled).toBe(true);
+    expect(mine.online).toBe(true);
+    expect(Number(mine.median_accept_seconds)).toBe(30);
+    expect(list.every((s: { enrolled: boolean }) => s.enrolled)).toBe(true);
+  });
+});

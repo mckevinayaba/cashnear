@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -106,7 +107,10 @@ function AdminHome() {
   return (
     <AppShell hideNav desktopWide>
       <Screen>
-        <header className="flex items-center justify-between pt-2">
+        <div className="pt-2">
+          <AdminTabs />
+        </div>
+        <header className="flex items-center justify-between">
           <div>
             <Eyebrow>Operations Control Centre</Eyebrow>
             <p className="mt-1 text-[13px] text-muted-foreground">
@@ -148,6 +152,30 @@ function AdminHome() {
         </section>
 
         <div className="grid gap-4 lg:grid-cols-3">
+          <Link to="/admin/business">
+            <Card variant="lift" className="cursor-pointer h-full">
+              <CardBody>
+                <Eyebrow className="text-gold">The numbers</Eyebrow>
+                <h3 className="mt-2 font-display text-[22px] leading-tight">Business</h3>
+                <Body className="mt-2 text-[14px] text-muted-foreground">
+                  Cash collected each week, how shops are doing, and what CashNear has earned.
+                </Body>
+              </CardBody>
+            </Card>
+          </Link>
+
+          <Link to="/admin/transactions">
+            <Card variant="lift" className="cursor-pointer h-full">
+              <CardBody>
+                <Eyebrow className="text-gold">The ledger</Eyebrow>
+                <h3 className="mt-2 font-display text-[22px] leading-tight">Transactions</h3>
+                <Body className="mt-2 text-[14px] text-muted-foreground">
+                  Every request, searchable, with fees and slip numbers. Export it to a file.
+                </Body>
+              </CardBody>
+            </Card>
+          </Link>
+
           <Link to="/admin/customers">
             <Card variant="lift" className="cursor-pointer h-full">
               <CardBody>

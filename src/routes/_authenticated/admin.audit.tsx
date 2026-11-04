@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { requireAdminBeforeLoad } from "@/lib/admin-route-guard";
@@ -85,12 +86,7 @@ function AdminAudit() {
     <AppShell hideNav desktopWide>
       <Screen>
         <div className="pt-2">
-          <Link
-            to="/admin"
-            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground"
-          >
-            ← Ops
-          </Link>
+          <AdminTabs />
         </div>
         <Eyebrow>Audit activity</Eyebrow>
         <Display className="text-[44px]">Read-only activity log.</Display>

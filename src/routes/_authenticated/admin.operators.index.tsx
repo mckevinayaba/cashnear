@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, Screen, Eyebrow, Display, Muted, Card, CardBody } from "@/components/ds";
@@ -66,12 +67,7 @@ function AdminOperators() {
     <AppShell hideNav desktopWide>
       <Screen>
         <div className="pt-2">
-          <Link
-            to="/admin"
-            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground"
-          >
-            ← Ops
-          </Link>
+          <AdminTabs />
         </div>
         <Eyebrow>Verification queue</Eyebrow>
         <Display className="text-[44px]">Operator applications.</Display>

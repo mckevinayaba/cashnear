@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { useCallback, useEffect, useState } from "react";
 import {
   AppShell,
@@ -78,12 +79,7 @@ function AdminCash() {
     <AppShell hideNav desktopWide>
       <Screen>
         <div className="pt-2">
-          <Link
-            to="/admin"
-            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground"
-          >
-            ← Ops
-          </Link>
+          <AdminTabs />
         </div>
         <Eyebrow>Cash holds</Eyebrow>
         <Display className="text-[44px]">Pilot controls.</Display>

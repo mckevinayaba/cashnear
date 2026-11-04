@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   AskScreen,
@@ -7,6 +7,8 @@ import {
   PhoneFrame,
   ShopAcceptScreen,
 } from "@/components/landing/ExampleScreens";
+import { MobileWelcome } from "@/components/landing/MobileWelcome";
+import { isStandaloneNow } from "@/hooks/use-install-prompt";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,6 +34,7 @@ export const Route = createFileRoute("/")({
 
 function PublicHome() {
   const [signedIn, setSignedIn] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -43,6 +46,11 @@ function PublicHome() {
         const { data } = await supabase.auth.getSession();
         if (!mounted) return;
         setSignedIn(!!data.session);
+        // Opened from the home screen and already signed in: go straight into the app.
+        if (data.session && isStandaloneNow()) {
+          navigate({ to: "/home", replace: true });
+          return;
+        }
 
         const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
           if (mounted) setSignedIn(!!session);
@@ -60,7 +68,7 @@ function PublicHome() {
       mounted = false;
       if (unsubscribe) unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const signOut = async () => {
     try {
@@ -75,19 +83,30 @@ function PublicHome() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <SiteHeader signedIn={signedIn} onSignOut={signOut} />
+      {/* A phone gets the app's welcome screen. A computer gets the website. */}
+      <div className="hidden lg:contents">
+        <SiteHeader signedIn={signedIn} onSignOut={signOut} />
+      </div>
 
       <main>
-        <Hero signedIn={signedIn} />
-        <PhotoBand />
-        <Flow />
-        <Trust />
-        <ForShops />
-        <Status signedIn={signedIn} />
-        <Faq />
+        <MobileWelcome signedIn={signedIn} />
+        <div className="hidden lg:contents">
+          <Hero signedIn={signedIn} />
+          <PhotoBand />
+        </div>
+        {/* Everything below is for people who want to read more. It is hidden inside the installed app. */}
+        <div className="site-extra">
+          <Flow />
+          <Trust />
+          <ForShops />
+          <Status signedIn={signedIn} />
+          <Faq />
+        </div>
       </main>
 
-      <SiteFooter />
+      <div className="site-extra">
+        <SiteFooter />
+      </div>
     </div>
   );
 }

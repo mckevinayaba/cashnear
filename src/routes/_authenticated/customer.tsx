@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ActivityRow } from "@/components/ActivityRow";
+import { InstallCard } from "@/components/InstallCard";
 import { ShareJoinLink } from "@/components/ShareJoinLink";
 import { AppShell, Body, Button, Card, CardBody, Display, Eyebrow, Screen } from "@/components/ds";
 import { useAuth } from "@/hooks/use-auth";
@@ -82,6 +83,8 @@ function Customer() {
             {initialsOf(fullName || auth.user?.email)}
           </Link>
         </header>
+
+        <InstallCard />
 
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1.15fr_1fr] lg:items-start lg:gap-10">
           <div className="flex flex-col gap-6">

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { InstallCard } from "@/components/InstallCard";
 import { ShareJoinLink } from "@/components/ShareJoinLink";
 import { AppShell, Button, Eyebrow, Screen } from "@/components/ds";
 import { useAuth } from "@/hooks/use-auth";
@@ -67,6 +68,8 @@ function AccountPage() {
             ) : null}
           </div>
         </header>
+
+        <InstallCard alwaysShow />
 
         <Group title="Look">
           <div className="flex min-h-14 items-center justify-between gap-4 px-5 py-3">

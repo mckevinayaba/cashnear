@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -142,12 +143,7 @@ function OperatorReview() {
     <AppShell hideNav desktopWide>
       <Screen>
         <div className="pt-2">
-          <Link
-            to="/admin/operators"
-            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground"
-          >
-            ← Queue
-          </Link>
+          <AdminTabs />
         </div>
         <Eyebrow>
           Application review{b.owner_id === DEMO_OPERATOR_OWNER_USER_ID ? " · Demo account" : ""}

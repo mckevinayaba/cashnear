@@ -72,10 +72,10 @@ credentials, and cannot reach any real database.
 
 ## Not built yet
 
-- Light, high-contrast shop screens for sunlight (the shop desk currently uses
-  the dark theme).
 - isiZulu and Sesotho, and SMS or WhatsApp accept links for shops. Today a shop
   must have the page open.
 - Shop vouching for regulars, and phone-number login (accounts are still email).
 - Admin MFA.
-- Fee collection from shops. Revenue starts with a partner agreement.
+- Fee collection. Revenue starts with a partner agreement: see
+  [MONEY_AND_MANAGEMENT.md](MONEY_AND_MANAGEMENT.md), which also describes the
+  admin screens for the weekly numbers, the transaction ledger and exports.

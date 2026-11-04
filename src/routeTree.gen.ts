@@ -27,9 +27,11 @@ import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
+import { Route as AuthenticatedAdminBusinessRouteImport } from './routes/_authenticated/admin.business'
 import { Route as AuthenticatedAdminCashRouteImport } from './routes/_authenticated/admin.cash'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin.customers'
 import { Route as AuthenticatedAdminOperatorsRouteImport } from './routes/_authenticated/admin.operators'
+import { Route as AuthenticatedAdminTransactionsRouteImport } from './routes/_authenticated/admin.transactions'
 import { Route as AuthenticatedOperatorApplyRouteImport } from './routes/_authenticated/operator.apply'
 import { Route as AuthenticatedOperatorDashboardRouteImport } from './routes/_authenticated/operator.dashboard'
 import { Route as AuthenticatedAdminOperatorsIndexRouteImport } from './routes/_authenticated/admin.operators.index'
@@ -124,6 +126,12 @@ const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminBusinessRoute =
+  AuthenticatedAdminBusinessRouteImport.update({
+    id: '/business',
+    path: '/business',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCashRoute = AuthenticatedAdminCashRouteImport.update({
   id: '/cash',
   path: '/cash',
@@ -139,6 +147,12 @@ const AuthenticatedAdminOperatorsRoute =
   AuthenticatedAdminOperatorsRouteImport.update({
     id: '/operators',
     path: '/operators',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminTransactionsRoute =
+  AuthenticatedAdminTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedOperatorApplyRoute =
@@ -183,9 +197,11 @@ export interface FileRoutesByFullPath {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/business': typeof AuthenticatedAdminBusinessRoute
   '/admin/cash': typeof AuthenticatedAdminCashRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/operators': typeof AuthenticatedAdminOperatorsRouteWithChildren
+  '/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
   '/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -208,8 +224,10 @@ export interface FileRoutesByTo {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/business': typeof AuthenticatedAdminBusinessRoute
   '/admin/cash': typeof AuthenticatedAdminCashRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
   '/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -235,9 +253,11 @@ export interface FileRoutesById {
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/_authenticated/admin/business': typeof AuthenticatedAdminBusinessRoute
   '/_authenticated/admin/cash': typeof AuthenticatedAdminCashRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/operators': typeof AuthenticatedAdminOperatorsRouteWithChildren
+  '/_authenticated/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
   '/_authenticated/operator/apply': typeof AuthenticatedOperatorApplyRoute
   '/_authenticated/operator/dashboard': typeof AuthenticatedOperatorDashboardRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -263,9 +283,11 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/admin/audit'
+    | '/admin/business'
     | '/admin/cash'
     | '/admin/customers'
     | '/admin/operators'
+    | '/admin/transactions'
     | '/operator/apply'
     | '/operator/dashboard'
     | '/admin/'
@@ -288,8 +310,10 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/admin/audit'
+    | '/admin/business'
     | '/admin/cash'
     | '/admin/customers'
+    | '/admin/transactions'
     | '/operator/apply'
     | '/operator/dashboard'
     | '/admin'
@@ -314,9 +338,11 @@ export interface FileRouteTypes {
     | '/legal/privacy'
     | '/legal/terms'
     | '/_authenticated/admin/audit'
+    | '/_authenticated/admin/business'
     | '/_authenticated/admin/cash'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/operators'
+    | '/_authenticated/admin/transactions'
     | '/_authenticated/operator/apply'
     | '/_authenticated/operator/dashboard'
     | '/_authenticated/admin/'
@@ -464,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/business': {
+      id: '/_authenticated/admin/business'
+      path: '/business'
+      fullPath: '/admin/business'
+      preLoaderRoute: typeof AuthenticatedAdminBusinessRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/cash': {
       id: '/_authenticated/admin/cash'
       path: '/cash'
@@ -483,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: '/operators'
       fullPath: '/admin/operators'
       preLoaderRoute: typeof AuthenticatedAdminOperatorsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/transactions': {
+      id: '/_authenticated/admin/transactions'
+      path: '/transactions'
+      fullPath: '/admin/transactions'
+      preLoaderRoute: typeof AuthenticatedAdminTransactionsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/operator/apply': {
@@ -535,18 +575,22 @@ const AuthenticatedAdminOperatorsRouteWithChildren =
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
+  AuthenticatedAdminBusinessRoute: typeof AuthenticatedAdminBusinessRoute
   AuthenticatedAdminCashRoute: typeof AuthenticatedAdminCashRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminOperatorsRoute: typeof AuthenticatedAdminOperatorsRouteWithChildren
+  AuthenticatedAdminTransactionsRoute: typeof AuthenticatedAdminTransactionsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
+  AuthenticatedAdminBusinessRoute: AuthenticatedAdminBusinessRoute,
   AuthenticatedAdminCashRoute: AuthenticatedAdminCashRoute,
   AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
   AuthenticatedAdminOperatorsRoute:
     AuthenticatedAdminOperatorsRouteWithChildren,
+  AuthenticatedAdminTransactionsRoute: AuthenticatedAdminTransactionsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
