@@ -29,7 +29,7 @@ export function BottomNav() {
       <div className="mx-auto flex max-w-[440px] items-end px-6 pt-2 lg:max-w-[520px]">
         {item("/customer", "Home", <HomeIcon />)}
         <Link to="/cash" className="-mt-7 flex flex-1 flex-col items-center gap-1 text-[12px] font-semibold text-foreground">
-          <span className={cn("grid h-16 w-16 place-items-center rounded-full bg-gold text-primary shadow-lg ring-4 ring-background transition-transform active:scale-95", cashActive && "scale-105")}>
+          <span className={cn("grid h-16 w-16 place-items-center rounded-full bg-gold text-gold-foreground shadow-lg ring-4 ring-background transition-transform active:scale-95", cashActive && "scale-105")}>
             <CashIcon />
           </span>
           <span>Get cash</span>
