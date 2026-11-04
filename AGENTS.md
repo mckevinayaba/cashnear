@@ -8,4 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
-- vite.config.ts must never throw on missing Supabase env or hardcode fallback values; managed builds inject env after config load, so only warn there and let the Supabase client fail at runtime.
+- vite.config.ts must never throw on missing Supabase env; only warn. Because root .env is git-ignored here (published builds never see it), vite.config.ts fills missing VITE_SUPABASE_* from committed cloud.public.json (public URL + publishable key only, owner-approved); real env always wins.
