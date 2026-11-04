@@ -115,7 +115,7 @@ export function distanceLabel(meters: number | null): string {
 
 const MESSAGES: Record<string, string> = {
   not_authenticated: "Sign in to continue.",
-  rail_unavailable: "This is not open yet. We will tell you when it is.",
+  rail_unavailable: "Shops near you are still joining. We will tell you as soon as one is ready.",
   amount_not_supported: "That amount isn't available.",
   amount_not_allowed: "That amount isn't available to you yet.",
   shop_cannot_serve: "That shop cannot give you this amount right now. Pick another shop.",
@@ -147,6 +147,14 @@ export function describeCashError(message: string | null | undefined): string {
   if (!message) return "Something went wrong. Please try again.";
   if (message.startsWith("Too many attempts")) return message;
   return MESSAGES[message.trim()] ?? "Something went wrong. Please try again.";
+}
+
+/**
+ * True when the cash service has not been switched on yet. The screen then
+ * shows the early-access welcome instead of an error.
+ */
+export function isCashNotReady(message: string | null | undefined): boolean {
+  return message === MESSAGES.rail_unavailable;
 }
 
 /** Plain-language outcome for a request that ended without cash changing hands. */

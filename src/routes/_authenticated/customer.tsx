@@ -93,8 +93,8 @@ function Customer() {
               <Eyebrow>Get cash</Eyebrow>
               <Display className="text-[30px] leading-[1.1]">Need cash near you?</Display>
               <Body className="text-[14px] text-muted-foreground">
-                See which shops can serve you, know the fee before you walk, and have the shop keep
-                it aside.
+                See which shops near you can help, know the fee before you walk, and have the shop
+                keep your cash aside.
               </Body>
               <Link to="/cash">
                 <Button size="lg" fullWidth>
@@ -130,11 +130,11 @@ function Customer() {
           <CardBody className="flex flex-col gap-3">
             <Eyebrow>Also available</Eyebrow>
             <Body className="text-[14px] text-muted-foreground">
-              Do you own a shop with a card machine? You can register your business too.
+              Do you own a shop with a card machine? You can register your shop too. It is free.
             </Body>
             <Link to="/operator/apply">
-              <Button variant="ghost" fullWidth>
-                Register my business →
+              <Button variant="secondary" fullWidth>
+                Register my shop
               </Button>
             </Link>
           </CardBody>
@@ -244,58 +244,14 @@ function Line({ done, children }: { done: boolean; children: React.ReactNode }) 
 /* -------- Verified customer home -------- */
 
 function VerifiedHome() {
-  const [amount, setAmount] = useState(500);
-  const presets = [200, 500, 1000, 2000];
   return (
-    <>
-      <div>
-        <Display className="text-[44px]">Need cash nearby?</Display>
-        <Muted className="mt-3 max-w-[34ch]">
-          Cash requests are not open yet. We are checking shops first.
-        </Muted>
-      </div>
-
-      <Card variant="lift">
-        <CardBody className="flex flex-col gap-5">
-          <Eyebrow>Amount (ZAR)</Eyebrow>
-          <div className="flex items-baseline gap-2">
-            <span className="font-display text-[64px] leading-none text-foreground">R</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value || 0))}
-              className="w-full bg-transparent font-display text-[64px] leading-none text-foreground outline-none"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {presets.map((p) => (
-              <button
-                key={p}
-                onClick={() => setAmount(p)}
-                className={`rounded-full border px-4 py-2 text-[13px] ${
-                  amount === p
-                    ? "border-gold text-gold"
-                    : "border-border-strong text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                R{p}
-              </button>
-            ))}
-          </div>
-          <Button disabled size="lg">
-            Cash requests are not open yet
-          </Button>
-        </CardBody>
-      </Card>
-
-      <Card variant="outline">
-        <CardBody className="flex flex-col gap-2">
-          <Eyebrow>Recent activity</Eyebrow>
-          <Muted>No requests yet.</Muted>
-        </CardBody>
-      </Card>
-    </>
+    <Card variant="outline">
+      <CardBody className="flex flex-col gap-2">
+        <Eyebrow>Your details</Eyebrow>
+        <Display className="text-[26px] leading-[1.1]">Your details are checked.</Display>
+        <Muted>Thank you. You are all set.</Muted>
+      </CardBody>
+    </Card>
   );
 }
 

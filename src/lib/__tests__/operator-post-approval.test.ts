@@ -15,12 +15,11 @@ function read(relativePath: string): string {
 describe("operator.dashboard.tsx post-approval experience", () => {
   const src = read("src/routes/_authenticated/operator.dashboard.tsx");
 
-  test("shows the required heading and message for an approved business", () => {
+  test("welcomes an approved business as one of the first, and says the cash desk is being set up", () => {
     expect(src).toContain("Your business is approved");
-    expect(src).toContain(
-      "Cash requests are not open yet. We are preparing the first group of CashNear",
-    );
-    expect(src).toContain("will contact you before requests begin");
+    expect(src).toContain("You are one of the first CashNear shops");
+    expect(src).toMatch(/setting up your cash desk/);
+    expect(src).toContain("we will contact you when it is ready");
   });
 
   test("shows application-approved and documents-accepted confirmations", () => {
@@ -38,12 +37,20 @@ describe("operator.dashboard.tsx post-approval experience", () => {
     expect(src).toContain("mailto:support@cashnear.co");
   });
 
+  test("lets a shop invite another shop", () => {
+    expect(src).toContain("<ShareJoinLink");
+  });
+
   test("never invents a launch date, promised income, or claims the business is already live", () => {
     expect(src).not.toMatch(
       /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+202\d\b/,
     );
     expect(src).not.toMatch(/\bR\d/); // no Rand amounts / promised earnings figures
     expect(src).not.toMatch(/you('re| are) now live|start earning|first request/i);
+  });
+
+  test("never reads as switched off", () => {
+    expect(src).not.toMatch(/not open|coming soon|not yet/i);
   });
 
   test('the approved branch is keyed strictly off application_status === "approved"', () => {

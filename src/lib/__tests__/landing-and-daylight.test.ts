@@ -81,9 +81,22 @@ describe("the public page makes no claim the product can't back", () => {
   const files = ["src/routes/index.tsx", "src/components/landing/ExampleScreens.tsx"];
   const page = read("src/routes/index.tsx");
 
-  test("it says plainly that cash requests are not open yet", () => {
-    expect(page).toMatch(/Not open yet/);
-    expect(page).toMatch(/cannot ask for cash on CashNear today/);
+  test("it invites people to join early access without saying cash is available today", () => {
+    expect(page).toMatch(/Early access/);
+    expect(page).toMatch(/as soon as a shop near you is ready/);
+    expect(page).not.toMatch(/available now|live now|live today|open now|open today|try it today/i);
+  });
+
+  test("it never reads as a product that is switched off", () => {
+    expect(page).not.toMatch(
+      /not open|not yet|coming soon|launching soon|cannot ask for cash|waitlist|under construction/i,
+    );
+  });
+
+  test("every join button carries the person's choice (customer or shop) into sign-up", () => {
+    expect(page).toMatch(/join="customer"/);
+    expect(page).toMatch(/join="shop"/);
+    expect(page).toMatch(/search=\{joinSearch\(/);
   });
 
   test("it names no payment partner or bank", () => {

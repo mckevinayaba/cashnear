@@ -12,6 +12,7 @@ import {
   CardBody,
   Button,
 } from "@/components/ds";
+import { ShareJoinLink } from "@/components/ShareJoinLink";
 import { ShopCashDesk } from "@/components/cash/ShopCashDesk";
 import { useShopTheme } from "@/hooks/use-shop-theme";
 import type { Database } from "@/integrations/supabase/types";
@@ -180,19 +181,28 @@ function OperatorDashboard() {
             <CardBody className="flex flex-col gap-3">
               <Display className="text-[24px]">Your business is approved.</Display>
               <Body className="text-[14px] text-muted-foreground">
-                Cash requests are not open yet. We are preparing the first group of CashNear
-                businesses and will contact you before requests begin.
+                You are one of the first CashNear shops. We are setting up your cash desk now, and
+                we will contact you when it is ready for you to use.
               </Body>
-              <ul className="flex flex-col gap-1 text-[14px] text-muted-foreground">
-                <li>✓ Application approved</li>
-                <li>✓ Documents accepted</li>
-                <li>— Customer cash requests: not open yet</li>
-              </ul>
+              <dl className="flex flex-col gap-2 text-[14px]">
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-muted-foreground">Application approved</dt>
+                  <dd className="text-success">Done</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-muted-foreground">Documents accepted</dt>
+                  <dd className="text-success">Done</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-muted-foreground">Your cash desk</dt>
+                  <dd className="text-gold">We are setting it up</dd>
+                </div>
+              </dl>
               <div>
                 <Eyebrow>What happens next</Eyebrow>
                 <Body className="mt-1 text-[14px] text-muted-foreground">
-                  We are getting the first group of CashNear shops ready. We'll contact you using
-                  the details on your application before customer requests open for your business.
+                  We will contact you using the details on your application. Then you can choose
+                  when you take requests and keep cash aside for people near you.
                 </Body>
               </div>
               <div>
@@ -205,15 +215,22 @@ function OperatorDashboard() {
                   and we'll help, including updating contact details on file.
                 </Body>
               </div>
+              <div>
+                <Eyebrow>Know another shop?</Eyebrow>
+                <Body className="mb-3 mt-1 text-[14px] text-muted-foreground">
+                  Send them this link. It is free for them to register.
+                </Body>
+                <ShareJoinLink audience="shop" label="Send to a shop" />
+              </div>
             </CardBody>
           </Card>
         ) : business.application_status !== "approved" ? (
           <Card variant="outline">
             <CardBody className="flex flex-col gap-2">
-              <Eyebrow>Coming soon</Eyebrow>
+              <Eyebrow>After we approve you</Eyebrow>
               <Body className="text-[14px] text-muted-foreground">
-                When cash requests open, you will choose when you're available, see requests, and
-                get paid.
+                You choose when you take requests. You see how much cash a customer wants before you
+                say yes. Customers pay you on your own payment machine.
               </Body>
             </CardBody>
           </Card>

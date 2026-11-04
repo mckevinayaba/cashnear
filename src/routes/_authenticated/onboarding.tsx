@@ -37,8 +37,10 @@ function Onboarding() {
             Sign out
           </button>
         </div>
-        <Display className="text-[44px]">What do you need?</Display>
-        <Muted className="max-w-[38ch]">Get cash, or help people get cash. You can do both.</Muted>
+        <Display className="text-[44px]">Welcome to CashNear.</Display>
+        <Muted className="max-w-[38ch]">
+          You are one of our first members. Choose what you want to do. You can do both.
+        </Muted>
 
         <div className="flex flex-col gap-4">
           <Card variant="lift">
@@ -48,10 +50,10 @@ function Onboarding() {
                 I need cash
               </h3>
               <Body className="text-[14px] text-muted-foreground">
-                Create an account. We will tell you when cash requests open.
+                Find a shop near you that keeps your cash aside. You see the fee before you go.
               </Body>
               <Link to="/customer" className="mt-2">
-                <Button fullWidth>Continue</Button>
+                <Button fullWidth>Get cash</Button>
               </Link>
             </CardBody>
           </Card>
@@ -63,11 +65,12 @@ function Onboarding() {
                 I own a business
               </h3>
               <Body className="text-[14px] text-muted-foreground">
-                Register your business so we can check it.
+                Register your shop. It is free. We check it, then you can help people near you get
+                cash.
               </Body>
               <Link to="/operator/apply" className="mt-2">
                 <Button variant="secondary" fullWidth>
-                  Continue
+                  Register my shop
                 </Button>
               </Link>
             </CardBody>

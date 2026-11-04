@@ -11,6 +11,7 @@ import {
   Muted,
   Screen,
 } from "@/components/ds";
+import { ShareJoinLink } from "@/components/ShareJoinLink";
 import { Handshake } from "@/components/cash/Handshake";
 import { HoldRing } from "@/components/cash/HoldRing";
 import { useCountdown } from "@/hooks/use-countdown";
@@ -29,6 +30,7 @@ import {
   PILOT_RAIL,
   describeClosedReason,
   formatRand,
+  isCashNotReady,
   isLiveStatus,
   secondsLeft,
   walkLabel,
@@ -160,7 +162,7 @@ function AskView({
       })
       .catch((e: Error) => {
         if (cancelled) return;
-        if (e.message.includes("aren't open yet")) setClosed(true);
+        if (isCashNotReady(e.message)) setClosed(true);
         else setError(e.message);
       });
     return () => {
@@ -197,12 +199,26 @@ function AskView({
 
   if (closed) {
     return (
-      <div className="flex flex-col gap-4">
-        <Eyebrow>Get cash</Eyebrow>
-        <Display className="text-[40px]">Not open yet.</Display>
-        <Body className="text-muted-foreground">
-          We are getting the first shops ready. We will tell you when you can ask for cash.
-        </Body>
+      <div className="flex flex-col gap-6">
+        <div>
+          <Eyebrow>Early access</Eyebrow>
+          <Display className="mt-2 text-[40px] leading-[1.05]">You are in.</Display>
+          <Body className="mt-3 text-muted-foreground">
+            Your account is ready. We are adding shops one at a time, and a real person checks each
+            one first. As soon as a shop near you is ready, you can ask for cash right here. We will
+            email you too.
+          </Body>
+        </div>
+        <Card variant="quiet">
+          <CardBody className="flex flex-col gap-3">
+            <Eyebrow>Help us open near you</Eyebrow>
+            <Body className="text-[14px] text-muted-foreground">
+              Do you know a shop that keeps cash and has a payment machine? Send them this link. It
+              is free for them to register.
+            </Body>
+            <ShareJoinLink audience="shop" label="Send to a shop" />
+          </CardBody>
+        </Card>
       </div>
     );
   }
@@ -341,9 +357,17 @@ function ShopsView({
         <Display className="mt-2 text-[34px] leading-[1.1]">
           {available.length > 0
             ? `${available.length} ${available.length === 1 ? "shop has" : "shops have"} your cash.`
-            : "No shop has your cash right now."}
+            : "No shop near you is ready right now."}
         </Display>
+        {shops.length === 0 ? (
+          <Body className="mt-3 text-muted-foreground">
+            We are adding shops all the time. Try again soon. You can also send this link to a shop
+            you know.
+          </Body>
+        ) : null}
       </div>
+
+      {shops.length === 0 ? <ShareJoinLink audience="shop" label="Send to a shop" /> : null}
 
       <ErrorLine message={error} />
 

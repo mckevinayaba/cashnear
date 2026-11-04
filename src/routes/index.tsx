@@ -15,12 +15,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Tell us how much cash you need. A shop near you says yes and keeps your cash for you. You see the fee before you go. Not open yet.",
+          "Tell us how much cash you need. A shop near you says yes and keeps your cash for you. You see the fee before you go. Join free for early access.",
       },
       { property: "og:title", content: "CashNear — Get cash from a shop near you." },
       {
         property: "og:description",
-        content: "Get cash from a shop near you. You see the fee before you go. Not open yet.",
+        content:
+          "Get cash from a shop near you. You see the fee before you go. Join free for early access.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -118,20 +119,36 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+type Join = "customer" | "shop";
+
+function joinSearch(join: Join) {
+  return join === "shop"
+    ? ({ mode: "signup", as: "shop" } as const)
+    : ({ mode: "signup" } as const);
+}
+
 function PrimaryBtn({
   children,
   to,
+  join,
   onClick,
   size = "md",
 }: {
   children: React.ReactNode;
   to?: string;
+  join?: Join;
   onClick?: () => void;
   size?: "md" | "lg";
 }) {
   const cls = `inline-flex items-center justify-center rounded-full bg-primary px-6 font-medium text-primary-foreground transition-colors hover:bg-primary/90 ${
     size === "lg" ? "h-12 text-[15px]" : "h-11 text-[14px]"
   }`;
+  if (join)
+    return (
+      <Link to="/auth" search={joinSearch(join)} className={cls}>
+        {children}
+      </Link>
+    );
   if (to)
     return (
       <Link to={to} className={cls}>
@@ -148,17 +165,25 @@ function PrimaryBtn({
 function SecondaryBtn({
   children,
   to,
+  join,
   href,
   size = "md",
 }: {
   children: React.ReactNode;
   to?: string;
+  join?: Join;
   href?: string;
   size?: "md" | "lg";
 }) {
   const cls = `inline-flex items-center justify-center rounded-full border border-border-strong bg-transparent px-6 font-medium text-foreground transition-colors hover:bg-surface ${
     size === "lg" ? "h-12 text-[15px]" : "h-11 text-[14px]"
   }`;
+  if (join)
+    return (
+      <Link to="/auth" search={joinSearch(join)} className={cls}>
+        {children}
+      </Link>
+    );
   if (to)
     return (
       <Link to={to} className={cls}>
@@ -197,8 +222,8 @@ function SiteHeader({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () 
           <a href="#operators" className="hover:text-foreground">
             For shops
           </a>
-          <a href="#status" className="hover:text-foreground">
-            Where we are
+          <a href="#join" className="hover:text-foreground">
+            Early access
           </a>
         </nav>
         <div className="flex items-center gap-2">
@@ -227,9 +252,10 @@ function SiteHeader({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () 
               </Link>
               <Link
                 to="/auth"
+                search={joinSearch("customer")}
                 className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
               >
-                Create account
+                Join free
               </Link>
             </>
           )}
@@ -246,7 +272,7 @@ function Hero({ signedIn }: { signedIn: boolean }) {
     <section className="border-b border-border">
       <Container className="grid items-center gap-14 py-16 lg:grid-cols-[1.1fr_1fr] lg:py-24">
         <div className="animate-rise">
-          <p className="text-[14px] text-gold">Not open yet. Sign up and we will tell you.</p>
+          <p className="text-[14px] text-gold">Early access. Join free.</p>
           <h1 className="mt-5 font-display text-[54px] leading-[0.98] tracking-tight text-foreground md:text-[78px]">
             Get cash from a shop near you.
           </h1>
@@ -262,11 +288,11 @@ function Hero({ signedIn }: { signedIn: boolean }) {
               </PrimaryBtn>
             ) : (
               <>
-                <PrimaryBtn to="/auth" size="lg">
-                  Tell me when it opens
+                <PrimaryBtn join="customer" size="lg">
+                  Join free
                 </PrimaryBtn>
-                <SecondaryBtn to="/auth" size="lg">
-                  I own a shop
+                <SecondaryBtn join="shop" size="lg">
+                  Register my shop
                 </SecondaryBtn>
               </>
             )}
@@ -415,7 +441,9 @@ function ForShops() {
       <Container className="grid items-center gap-14 py-16 lg:grid-cols-2 lg:py-24">
         <div>
           <SectionEyebrow>For shops</SectionEyebrow>
-          <SectionTitle>Do you have a shop? Help people near you get cash.</SectionTitle>
+          <SectionTitle>
+            Do you have a shop? Be one of the first to help people near you get cash.
+          </SectionTitle>
           <div className="mt-8 flex flex-col divide-y divide-border border-y border-border">
             {items.map((it) => (
               <p key={it} className="py-4 text-[16px] leading-relaxed text-foreground">
@@ -424,12 +452,12 @@ function ForShops() {
             ))}
           </div>
           <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-muted-foreground">
-            Sign up now. We check your papers and your payment machine, and a real person visits
+            Register now. We check your papers and your payment machine, and a real person visits
             your shop before you start. Customers pay you on your own payment machine.
           </p>
           <div className="mt-8">
-            <PrimaryBtn to="/auth" size="lg">
-              Sign up my shop
+            <PrimaryBtn join="shop" size="lg">
+              Register my shop
             </PrimaryBtn>
           </div>
         </div>
@@ -441,25 +469,35 @@ function ForShops() {
   );
 }
 
-/* ---------------- Where we are ---------------- */
+/* ---------------- Join ---------------- */
 
 function Status({ signedIn }: { signedIn: boolean }) {
   return (
-    <section id="status" className="scroll-mt-16 border-b border-border">
+    <section id="join" className="scroll-mt-16 border-b border-border">
       <Container className="py-16 lg:py-24">
-        <SectionEyebrow>Where we are</SectionEyebrow>
-        <SectionTitle>We are not open yet.</SectionTitle>
+        <SectionEyebrow>Early access</SectionEyebrow>
+        <SectionTitle>Be one of the first.</SectionTitle>
         <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-muted-foreground">
-          You cannot ask for cash on CashNear today. We are checking shops first, because we want it
-          to be safe. Sign up and we will tell you when it opens.
+          CashNear is growing shop by shop. A real person checks every shop before it can help
+          anyone, so it is safe for you. Join free now, and you will be first in line as soon as a
+          shop near you is ready.
         </p>
-        {!signedIn ? (
-          <div className="mt-8">
-            <PrimaryBtn to="/auth" size="lg">
-              Tell me when it opens
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          {signedIn ? (
+            <PrimaryBtn to="/home" size="lg">
+              Go to my account
             </PrimaryBtn>
-          </div>
-        ) : null}
+          ) : (
+            <>
+              <PrimaryBtn join="customer" size="lg">
+                Join free
+              </PrimaryBtn>
+              <SecondaryBtn join="shop" size="lg">
+                Register my shop
+              </SecondaryBtn>
+            </>
+          )}
+        </div>
       </Container>
     </section>
   );
@@ -470,8 +508,12 @@ function Status({ signedIn }: { signedIn: boolean }) {
 function Faq() {
   const faqs: [string, string][] = [
     [
-      "Can I get cash through CashNear now?",
-      "Not yet. We are checking shops first. Sign up and we will tell you when it opens.",
+      "When can I get cash?",
+      "We are adding shops one at a time, and a real person checks each one first. Join free now and we will tell you as soon as a shop near you is ready.",
+    ],
+    [
+      "Is it free to join?",
+      "Yes. Joining is free. CashNear charges you nothing, and charges shops nothing for now.",
     ],
     [
       "How much does it cost?",
@@ -529,14 +571,15 @@ function SiteFooter() {
         <div className="md:col-span-2">
           <Wordmark />
           <p className="mt-4 max-w-[40ch] text-[13px] leading-relaxed text-muted-foreground">
-            Get cash from a shop near you. Not open yet.
+            Get cash from a shop near you. Early access.
           </p>
         </div>
         <FooterCol
           title="Product"
           links={[
+            ["Join free", "/auth", "customer"],
+            ["Register my shop", "/auth", "shop"],
             ["Sign in", "/auth"],
-            ["Register my business", "/auth"],
             ["Why you can trust it", "#safety"],
             ["FAQ", "#faq"],
           ]}
@@ -560,13 +603,23 @@ function SiteFooter() {
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
+function FooterCol({ title, links }: { title: string; links: [string, string, Join?][] }) {
   return (
     <div>
       <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{title}</div>
       <ul className="mt-4 flex flex-col gap-3 text-[13px]">
-        {links.map(([label, href]) =>
-          href.startsWith("/") ? (
+        {links.map(([label, href, join]) =>
+          join ? (
+            <li key={label}>
+              <Link
+                to="/auth"
+                search={joinSearch(join)}
+                className="text-foreground hover:text-gold"
+              >
+                {label}
+              </Link>
+            </li>
+          ) : href.startsWith("/") ? (
             <li key={label}>
               <Link to={href} className="text-foreground hover:text-gold">
                 {label}

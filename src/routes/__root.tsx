@@ -78,24 +78,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CashNear — Find cash near you." },
+      { title: "CashNear — Get cash from a shop near you." },
       {
         name: "description",
         content:
-          "CashNear helps you find a checked shop near you for cash. Cash requests are not open yet.",
+          "CashNear helps you find a checked shop near you that keeps your cash aside. Join free for early access.",
       },
       { name: "author", content: "CashNear" },
-      { property: "og:title", content: "CashNear — Find cash near you." },
+      { property: "og:title", content: "CashNear — Get cash from a shop near you." },
       {
         property: "og:description",
-        content: "Find a checked shop near you for cash. Cash requests are not open yet.",
+        content: "Find a checked shop near you for cash. Join free for early access.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "CashNear — Find cash near you." },
+      { name: "twitter:title", content: "CashNear — Get cash from a shop near you." },
       {
         name: "twitter:description",
-        content: "Find a checked shop near you for cash. Cash requests are not open yet.",
+        content: "Find a checked shop near you for cash. Join free for early access.",
       },
       {
         property: "og:image",
