@@ -30,14 +30,6 @@ export const Route = createFileRoute("/_authenticated/customer")({
   component: Customer,
 });
 
-const STATUS_COPY: Record<string, { label: string; tone: string }> = {
-  unverified: { label: "Not started", tone: "text-muted-foreground" },
-  pending: { label: "Under review", tone: "text-gold" },
-  approved: { label: "Verified", tone: "text-success" },
-  rejected: { label: "Additional info needed", tone: "text-destructive" },
-  suspended: { label: "Suspended", tone: "text-destructive" },
-};
-
 function Customer() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -67,7 +59,6 @@ function Customer() {
   };
 
   const status = customer?.verification_status ?? "unverified";
-  const isVerified = status === "approved";
 
   return (
     <AppShell hideNav>
@@ -107,8 +98,6 @@ function Customer() {
 
         {loading ? (
           <Muted>Loading your account…</Muted>
-        ) : isVerified ? (
-          <VerifiedHome />
         ) : showForm ? (
           <VerificationForm
             existing={customer}
@@ -119,11 +108,7 @@ function Customer() {
             }}
           />
         ) : (
-          <VerificationSummary
-            status={status}
-            reviewNotes={customer?.review_notes ?? null}
-            onStart={() => setShowForm(true)}
-          />
+          <OptionalDetails status={status} onStart={() => setShowForm(true)} />
         )}
 
         <Card variant="outline">
@@ -144,112 +129,30 @@ function Customer() {
   );
 }
 
-/* -------- Unverified / pending / rejected view -------- */
+/* -------- Optional details -------- */
 
-function VerificationSummary({
-  status,
-  reviewNotes,
-  onStart,
-}: {
-  status: string;
-  reviewNotes: string | null;
-  onStart: () => void;
-}) {
-  const s = STATUS_COPY[status] ?? STATUS_COPY.unverified;
-  const primaryLabel =
-    status === "rejected"
-      ? "Update my details"
+// Nobody needs an ID, a selfie or any papers to get cash, and nothing here
+// changes what a customer can ask for. This is a quiet extra, not a step.
+function OptionalDetails({ status, onStart }: { status: string; onStart: () => void }) {
+  const line =
+    status === "approved"
+      ? "Your details are checked. Thank you."
       : status === "pending"
-        ? "View my details"
-        : "Send my details";
-
-  const heading =
-    status === "pending"
-      ? "We are checking your details."
-      : status === "rejected"
-        ? "We still need more information."
-        : "Check your details (optional).";
-
-  const body =
-    status === "pending"
-      ? "We are checking your details. This usually takes one business day."
-      : status === "rejected"
-        ? reviewNotes || "Please check your details and try again with a clearer document."
-        : "You can ask for cash without this. It is optional for now.";
-
-  return (
-    <>
-      <div>
-        <Display className="text-[44px]">{heading}</Display>
-        <Muted className="mt-3 max-w-[36ch]">{body}</Muted>
-      </div>
-
-      <Card variant="lift">
-        <CardBody className="flex flex-col gap-5">
-          <div className="flex items-center justify-between">
-            <Eyebrow>Verification</Eyebrow>
-            <span className={`text-[12px] ${s.tone}`}>{s.label}</span>
-          </div>
-
-          <ProgressBar status={status} />
-
-          <ul className="flex flex-col gap-3 text-[14px] text-muted-foreground">
-            <Line done={status !== "unverified"}>Account created</Line>
-            <Line done={status === "pending" || status === "approved"}>Details sent</Line>
-            <Line done={status === "approved"}>Approved</Line>
-          </ul>
-
-          {status !== "pending" ? (
-            <Button onClick={onStart} size="lg">
-              {primaryLabel}
-            </Button>
-          ) : (
-            <Button variant="secondary" disabled size="lg">
-              Sent — we are checking
-            </Button>
-          )}
-        </CardBody>
-      </Card>
-    </>
-  );
-}
-
-function ProgressBar({ status }: { status: string }) {
-  const pct =
-    status === "approved" ? 100 : status === "pending" ? 66 : status === "rejected" ? 33 : 12;
-  return (
-    <div className="h-1 w-full overflow-hidden rounded-full bg-surface-2">
-      <div className="h-full bg-gold transition-all" style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
-function Line({ done, children }: { done: boolean; children: React.ReactNode }) {
-  return (
-    <li className="flex items-center gap-3">
-      <span
-        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border ${
-          done
-            ? "border-success bg-success/20 text-success"
-            : "border-border-strong text-muted-foreground"
-        } text-[10px]`}
-      >
-        {done ? "✓" : ""}
-      </span>
-      <span className={done ? "text-foreground" : ""}>{children}</span>
-    </li>
-  );
-}
-
-/* -------- Verified customer home -------- */
-
-function VerifiedHome() {
+        ? "We are checking the details you sent. Getting cash does not wait for this."
+        : status === "rejected"
+          ? "We could not read your details. You can send them again. Getting cash is not affected."
+          : "You do not need an ID, a selfie or any papers to get cash. You can add your details if you want to. It is your choice.";
+  const canAdd = status === "unverified" || status === "rejected";
   return (
     <Card variant="outline">
-      <CardBody className="flex flex-col gap-2">
+      <CardBody className="flex flex-col gap-3">
         <Eyebrow>Your details</Eyebrow>
-        <Display className="text-[26px] leading-[1.1]">Your details are checked.</Display>
-        <Muted>Thank you. You are all set.</Muted>
+        <Body className="text-[14px] text-muted-foreground">{line}</Body>
+        {canAdd ? (
+          <Button variant="secondary" onClick={onStart}>
+            {status === "rejected" ? "Send my details again" : "Add my details"}
+          </Button>
+        ) : null}
       </CardBody>
     </Card>
   );

@@ -154,12 +154,14 @@ export type Database = {
           business_id: string
           cash_band_cents: number
           enrolled: boolean
+          landmark: string | null
           latitude: number | null
           longitude: number | null
           missed_count: number
           online: boolean
           online_until: string | null
           paused_reason: string | null
+          photo_path: string | null
           small_notes: boolean
           trust_score: number
           updated_at: string
@@ -169,12 +171,14 @@ export type Database = {
           business_id: string
           cash_band_cents?: number
           enrolled?: boolean
+          landmark?: string | null
           latitude?: number | null
           longitude?: number | null
           missed_count?: number
           online?: boolean
           online_until?: string | null
           paused_reason?: string | null
+          photo_path?: string | null
           small_notes?: boolean
           trust_score?: number
           updated_at?: string
@@ -184,12 +188,14 @@ export type Database = {
           business_id?: string
           cash_band_cents?: number
           enrolled?: boolean
+          landmark?: string | null
           latitude?: number | null
           longitude?: number | null
           missed_count?: number
           online?: boolean
           online_until?: string | null
           paused_reason?: string | null
+          photo_path?: string | null
           small_notes?: boolean
           trust_score?: number
           updated_at?: string
@@ -855,10 +861,38 @@ export type Database = {
           business_id: string
           can_serve: boolean
           distance_m: number
+          landmark: string | null
           name: string
+          photo_path: string | null
           suburb: string
           walk_min: number
         }[]
+      }
+      cash_set_shopfront: {
+        Args: { p_business: string; p_landmark: string; p_photo_path: string }
+        Returns: {
+          area: string | null
+          business_id: string
+          cash_band_cents: number
+          enrolled: boolean
+          landmark: string | null
+          latitude: number | null
+          longitude: number | null
+          missed_count: number
+          online: boolean
+          online_until: string | null
+          paused_reason: string | null
+          photo_path: string | null
+          small_notes: boolean
+          trust_score: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "cash_points"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       cash_quote: {
         Args: { p_amount_cents: number; p_rail: string }

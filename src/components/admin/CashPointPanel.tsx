@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Body, Button, Card, CardBody, Eyebrow, Muted } from "@/components/ds";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { ShopfrontPhoto } from "@/components/cash/ShopfrontPhoto";
 import { supabase } from "@/integrations/supabase/client";
 import { describeCashError, formatRand } from "@/lib/cash";
+import { removeShopfrontFile, uploadShopfront } from "@/lib/shopfront";
 import type { Database } from "@/integrations/supabase/types";
 
 type CashPoint = Database["public"]["Tables"]["cash_points"]["Row"];
@@ -29,6 +31,11 @@ export function CashPointPanel({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [landmark, setLandmark] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [frontMessage, setFrontMessage] = useState<string | null>(null);
+  const [frontError, setFrontError] = useState<string | null>(null);
+  const [savingFront, setSavingFront] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -41,6 +48,7 @@ export function CashPointPanel({
       setLat(data.latitude?.toString() ?? "");
       setLng(data.longitude?.toString() ?? "");
       setArea(data.area ?? "");
+      setLandmark(data.landmark ?? "");
     }
     setLoaded(true);
   }, [businessId]);
@@ -75,6 +83,34 @@ export function CashPointPanel({
       setError((e as Error).message);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const saveFront = async () => {
+    setSavingFront(true);
+    setFrontError(null);
+    setFrontMessage(null);
+    try {
+      const previous = point?.photo_path ?? null;
+      const nextPath = photo ? await uploadShopfront(businessId, photo) : previous;
+      const { error: rpcError } = await supabase.rpc("cash_set_shopfront", {
+        p_business: businessId,
+        p_landmark: landmark.trim(),
+        p_photo_path: nextPath as string,
+      });
+      if (rpcError) {
+        // The file was never attached to the shop, so do not leave it behind.
+        if (photo) await removeShopfrontFile(nextPath);
+        throw new Error(describeCashError(rpcError.message));
+      }
+      if (photo) await removeShopfrontFile(previous);
+      setPhoto(null);
+      setFrontMessage("Shop front saved. Customers will now see it.");
+      await load();
+    } catch (e) {
+      setFrontError((e as Error).message);
+    } finally {
+      setSavingFront(false);
     }
   };
 
@@ -166,6 +202,61 @@ export function CashPointPanel({
           )}
         </CardBody>
       </Card>
+
+      {point ? (
+        <Card variant="outline" className="mt-4">
+          <CardBody className="flex flex-col gap-4">
+            <div>
+              <Eyebrow>Shop front</Eyebrow>
+              <Body className="mt-1 text-[14px] text-muted-foreground">
+                Take this when you visit. Customers see the photo and the landmark before they walk
+                over, so stand where a customer would first see the shop.
+              </Body>
+            </div>
+
+            <ShopfrontPhoto path={point.photo_path} name="this shop" />
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[12px] text-muted-foreground">
+                Landmark, in the words people use
+              </span>
+              <input
+                value={landmark}
+                onChange={(e) => setLandmark(e.target.value)}
+                maxLength={120}
+                placeholder="Next to the clinic"
+                className="h-11 rounded-xl border border-border-strong bg-transparent px-3 text-[14px]"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[12px] text-muted-foreground">
+                {point.photo_path ? "Replace the photo" : "Photo of the shop front"}
+              </span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+                className="text-[13px] text-muted-foreground file:mr-3 file:rounded-full file:border file:border-border-strong file:bg-transparent file:px-4 file:py-2 file:text-[13px] file:text-foreground"
+              />
+            </label>
+
+            {frontError ? (
+              <p role="alert" className="text-[13px] text-destructive">
+                {frontError}
+              </p>
+            ) : null}
+            {frontMessage ? <p className="text-[13px] text-success">{frontMessage}</p> : null}
+
+            <div>
+              <Button disabled={savingFront} onClick={saveFront}>
+                {savingFront ? "Saving…" : "Save shop front"}
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <ConfirmActionDialog
         open={clearing}

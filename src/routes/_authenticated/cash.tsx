@@ -14,7 +14,9 @@ import {
 import { ShareJoinLink } from "@/components/ShareJoinLink";
 import { Handshake } from "@/components/cash/Handshake";
 import { HoldRing } from "@/components/cash/HoldRing";
+import { ShopfrontPhoto } from "@/components/cash/ShopfrontPhoto";
 import { useCountdown } from "@/hooks/use-countdown";
+import { useShopTheme } from "@/hooks/use-shop-theme";
 import {
   cashNearby,
   cashQuote,
@@ -53,6 +55,9 @@ type Phase =
 
 function CashPage() {
   const [phase, setPhase] = useState<Phase>({ name: "loading" });
+  // Customers use this screen on the street, often in strong sun, so it opens
+  // bright and high-contrast. They can switch to the dark look if they prefer.
+  const [theme, toggleTheme] = useShopTheme();
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +79,14 @@ function CashPage() {
           <Link to="/customer" className="font-display text-[22px] tracking-tight">
             CashNear
           </Link>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-pressed={theme === "day"}
+            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
+          >
+            {theme === "day" ? "Night mode" : "Daylight"}
+          </button>
         </header>
 
         {phase.name === "loading" ? <Muted>Loading…</Muted> : null}
@@ -375,16 +388,20 @@ function ShopsView({
         {shops.map((s) => (
           <li key={s.business_id}>
             <Card variant={s.can_serve ? "lift" : "quiet"}>
-              <CardBody className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="truncate font-display text-[20px]">{s.name}</p>
-                  <p className="mt-0.5 text-[13px] text-muted-foreground">
+              <CardBody className="flex flex-col gap-4">
+                <ShopfrontPhoto path={s.photo_path} name={s.name} />
+                <div>
+                  <p className="font-display text-[22px] leading-tight">{s.name}</p>
+                  {s.landmark ? (
+                    <p className="mt-1 text-[15px] leading-snug text-foreground">{s.landmark}</p>
+                  ) : null}
+                  <p className="mt-1 text-[13px] text-muted-foreground">
                     {s.suburb ? `${s.suburb} · ` : ""}
                     {walkLabel(s.walk_min)}
                   </p>
                   <p
                     className={cn(
-                      "mt-1 text-[12px] uppercase tracking-[0.16em]",
+                      "mt-2 text-[12px] uppercase tracking-[0.16em]",
                       s.can_serve ? "text-success" : "text-muted-foreground",
                     )}
                   >
@@ -392,7 +409,7 @@ function ShopsView({
                   </p>
                 </div>
                 {s.can_serve ? (
-                  <Button size="md" disabled={busyId !== null} onClick={() => hold(s)}>
+                  <Button size="lg" fullWidth disabled={busyId !== null} onClick={() => hold(s)}>
                     {busyId === s.business_id ? "Asking…" : `Keep ${formatRand(amount)} for me`}
                   </Button>
                 ) : null}
@@ -642,6 +659,11 @@ function HeldView({
           <p className="mt-1 truncate text-[14px] text-muted-foreground">at {shopName}</p>
         </div>
       </div>
+
+      <ShopfrontPhoto path={req.shop?.photo_path} name={shopName} />
+      {req.shop?.landmark ? (
+        <p className="text-[16px] leading-snug text-foreground">{req.shop.landmark}</p>
+      ) : null}
 
       {req.shop?.address ? (
         <p className="text-[14px] text-muted-foreground">

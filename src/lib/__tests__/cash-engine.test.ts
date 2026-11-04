@@ -259,7 +259,9 @@ describe("the request lifecycle", () => {
       "business_id",
       "can_serve",
       "distance_m",
+      "landmark",
       "name",
+      "photo_path",
       "suburb",
       "walk_min",
     ]);
@@ -676,5 +678,137 @@ describe("audit attribution (restored hardening)", () => {
         (tx) => tx`select public.log_audit_event('Not A Valid Action', 'test', 'x', null)`,
       ),
     ).rejects.toThrow("Invalid action");
+  });
+});
+
+describe("shopfront: a landmark and a photo, set only by the person who visits", () => {
+  const photo = () => `${shop}/front-${crypto.randomUUID().slice(0, 8)}.jpg`;
+  const setFront = (who: string, business: string, landmark: string | null, path: string | null) =>
+    db.as(
+      who,
+      "authenticated",
+      (tx) => tx`select * from public.cash_set_shopfront(${business}::uuid, ${landmark}, ${path})`,
+    );
+  let viewer: string;
+
+  test("an admin can set a landmark and a photo; a shop owner or customer cannot", async () => {
+    const path = photo();
+    const [row] = await setFront(ops, shop, "  Next to the clinic  ", path);
+    expect(row.landmark).toBe("Next to the clinic");
+    expect(row.photo_path).toBe(path);
+    await expect(setFront(shopOwner, shop, "Mine now", null)).rejects.toThrow("forbidden");
+    await expect(setFront(customers[0], shop, "Mine now", null)).rejects.toThrow("forbidden");
+  });
+
+  test("a shop owner cannot write the columns directly either", async () => {
+    await db
+      .as(
+        shopOwner,
+        "authenticated",
+        (tx) =>
+          tx`update public.cash_points set landmark = 'Hacked', photo_path = null where business_id = ${shop}::uuid`,
+      )
+      .catch(() => undefined);
+    const [row] = await db.sql`select landmark from public.cash_points where business_id = ${shop}`;
+    expect(row.landmark).toBe("Next to the clinic");
+  });
+
+  test("a photo can only sit in its own shop's folder, with a plain file name", async () => {
+    const bad = [
+      `${shop2}/front.jpg`, // another shop's folder
+      "front.jpg", // no folder
+      `${shop}/../${shop2}/front.jpg`, // traversal
+      `${shop}/a b.jpg`, // unsafe characters
+      `${shop}/${"x".repeat(100)}.jpg`, // too long
+    ];
+    for (const p of bad)
+      await expect(setFront(ops, shop, "Next to the clinic", p)).rejects.toThrow("invalid_photo");
+  });
+
+  test("a shop that is not enrolled has nothing to attach a photo to", async () => {
+    await expect(setFront(ops, draftShop, "Somewhere", null)).rejects.toThrow("not_enrolled");
+  });
+
+  test("an overlong landmark is cut to 120 characters, and a blank one is cleared", async () => {
+    const [long] = await setFront(ops, shop, "x".repeat(300), null);
+    expect(long.landmark.length).toBe(120);
+    const [blank] = await setFront(ops, shop, "   ", null);
+    expect(blank.landmark).toBeNull();
+    await setFront(ops, shop, "Next to the clinic", photo());
+  });
+
+  test("setting a shopfront is written to the audit log", async () => {
+    const rows = await db.sql`
+      select actor_role from public.audit_logs where action = 'cash.point.shopfront' and entity_id = ${shop}
+    `;
+    expect(rows.length).toBeGreaterThan(0);
+  });
+
+  test("a customer searching sees the landmark and photo, and the order is still best-first", async () => {
+    await resetShop(shop);
+    await resetShop(shop2);
+    await setFront(ops, shop2, null, null);
+    const shops = await db.as(
+      customers[1],
+      "authenticated",
+      (tx) =>
+        tx`select * from public.cash_nearby(${LAT}::float8, ${LNG}::float8, 10000::int, ${RAIL}, false)`,
+    );
+    const mine = shops.find((s) => s.business_id === shop);
+    const other = shops.find((s) => s.business_id === shop2);
+    expect(mine.landmark).toBe("Next to the clinic");
+    expect(mine.photo_path).toMatch(new RegExp(`^${shop}/front-`));
+    expect(other.landmark).toBeNull();
+    expect(other.photo_path).toBeNull();
+    const canServe = shops.map((s) => s.can_serve);
+    expect(canServe).toEqual([...canServe].sort((a, b) => Number(b) - Number(a)));
+  });
+
+  test("the customer's request screen carries them; the shop's own view does not", async () => {
+    viewer = await createUser(db.sql, "viewer@example.test", "Viewer");
+    await resetShop(shop);
+    const made = await create(viewer, shop, 10000);
+    await act(shopOwner, made.id, "accept");
+    const asCustomer = await get(viewer, made.id);
+    expect(asCustomer.shop.landmark).toBe("Next to the clinic");
+    expect(asCustomer.shop.photo_path).toMatch(new RegExp(`^${shop}/front-`));
+    const asShop = await get(shopOwner, made.id);
+    expect(asShop.shop).toBeNull();
+    await act(viewer, made.id, "cancel");
+  });
+
+  test("only admins can add, replace or remove photos in storage; anyone can be shown one", async () => {
+    const [bucket] =
+      await db.sql`select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'shopfronts'`;
+    expect(bucket.public).toBe(true);
+    expect(Number(bucket.file_size_limit)).toBeLessThanOrEqual(3 * 1024 * 1024);
+    expect(bucket.allowed_mime_types.every((m: string) => m.startsWith("image/"))).toBe(true);
+    expect(bucket.allowed_mime_types).not.toContain("image/svg+xml");
+
+    const name = `${shop}/storage-${crypto.randomUUID().slice(0, 8)}.jpg`;
+    for (const who of [shopOwner, customers[0]])
+      await expect(
+        db.as(
+          who,
+          "authenticated",
+          (tx) => tx`insert into storage.objects (bucket_id, name) values ('shopfronts', ${name})`,
+        ),
+      ).rejects.toThrow();
+    await db.as(
+      ops,
+      "authenticated",
+      (tx) => tx`insert into storage.objects (bucket_id, name) values ('shopfronts', ${name})`,
+    );
+    // A shop owner cannot delete or rename it either (the row is simply not visible to them).
+    await db
+      .as(
+        shopOwner,
+        "authenticated",
+        (tx) => tx`delete from storage.objects where bucket_id = 'shopfronts' and name = ${name}`,
+      )
+      .catch(() => undefined);
+    const [still] =
+      await db.sql`select count(*)::int as n from storage.objects where bucket_id = 'shopfronts' and name = ${name}`;
+    expect(still.n).toBe(1);
   });
 });

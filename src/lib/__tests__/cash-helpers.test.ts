@@ -6,6 +6,7 @@ import {
   describeCashError,
   describeClosedReason,
   distanceLabel,
+  fitWithin,
   formatClock,
   formatRand,
   isLiveStatus,
@@ -158,5 +159,78 @@ describe("principles the build must keep", () => {
     expect(read("src/lib/cash-api.ts")).not.toMatch(
       /p_(lat|lng)[^\n]*createCashRequest|create_cash_request[^)]*lat/,
     );
+  });
+});
+
+describe("shop photos", () => {
+  test("a large phone photo is shrunk to fit, keeping its shape", () => {
+    expect(fitWithin(4000, 3000, 1280)).toEqual({ width: 1280, height: 960 });
+    expect(fitWithin(3000, 4000, 1280)).toEqual({ width: 960, height: 1280 });
+  });
+
+  test("a small photo is never made bigger, and nonsense sizes are safe", () => {
+    expect(fitWithin(800, 600, 1280)).toEqual({ width: 800, height: 600 });
+    expect(fitWithin(0, 600, 1280)).toEqual({ width: 0, height: 0 });
+    expect(fitWithin(5000, 1, 1280).height).toBe(1);
+  });
+
+  test("uploads are re-drawn as plain JPEGs, which drops hidden details such as where it was taken", () => {
+    const src = read("src/lib/shopfront.ts");
+    expect(src).toContain("drawImage");
+    expect(src).toContain('"image/jpeg"');
+    expect(src).toMatch(/\$\{businessId\}\/\$\{crypto\.randomUUID\(\)\}\.jpg/);
+  });
+
+  test("a missing or broken photo shows nothing, never a broken-image icon", () => {
+    const c = read("src/components/cash/ShopfrontPhoto.tsx");
+    expect(c).toMatch(/if \(!url \|\| failed\) return null/);
+    expect(c).toContain("onError");
+  });
+
+  test("customers see the photo and landmark when choosing a shop and while they walk to it", () => {
+    const page = read("src/routes/_authenticated/cash.tsx");
+    expect(page).toMatch(/<ShopfrontPhoto path=\{s\.photo_path\}/);
+    expect(page).toMatch(/<ShopfrontPhoto path=\{req\.shop\?\.photo_path\}/);
+    expect(page).toContain("s.landmark");
+    expect(page).toContain("req.shop.landmark");
+  });
+
+  test("only the admin panel can change them, and shops and customers have no way to", () => {
+    expect(read("src/components/admin/CashPointPanel.tsx")).toContain("cash_set_shopfront");
+    for (const f of [
+      "src/routes/_authenticated/cash.tsx",
+      "src/routes/_authenticated/customer.tsx",
+      "src/routes/_authenticated/operator.dashboard.tsx",
+      "src/components/cash/ShopCashDesk.tsx",
+    ]) {
+      const src = read(f);
+      expect(src).not.toContain("cash_set_shopfront");
+      expect(src).not.toContain("uploadShopfront");
+    }
+  });
+});
+
+describe("customers are never made to feel an ID is needed", () => {
+  const customer = read("src/routes/_authenticated/customer.tsx");
+
+  test("the account page says so plainly, and offers details as a choice", () => {
+    expect(customer).toContain("You do not need an ID, a selfie or any papers to get cash");
+    expect(customer).toContain("Add my details");
+  });
+
+  test("there is no verification progress, steps or percentage on the account page", () => {
+    expect(customer).not.toMatch(/ProgressBar|Verification<\/Eyebrow>|Under review|Not started/);
+    expect(customer).not.toMatch(/<Line\b|Account created|Details sent|Approved<\/Line>/);
+  });
+
+  test("the get-cash card comes first on the account page", () => {
+    const cash = customer.indexOf("Need cash near you?");
+    const details = customer.indexOf("<OptionalDetails");
+    expect(cash).toBeGreaterThan(-1);
+    expect(cash).toBeLessThan(details);
+  });
+
+  test("the customer's cash screens open in daylight, because customers use them outdoors", () => {
+    expect(read("src/routes/_authenticated/cash.tsx")).toContain("useShopTheme()");
   });
 });

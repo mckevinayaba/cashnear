@@ -7,6 +7,8 @@ export interface CashShopPublic {
   name: string | null;
   suburb: string | null;
   address: string | null;
+  landmark: string | null;
+  photo_path: string | null;
   lat: number | null;
   lng: number | null;
 }
@@ -54,6 +56,8 @@ export interface NearbyShop {
   distance_m: number;
   walk_min: number;
   can_serve: boolean;
+  landmark: string | null;
+  photo_path: string | null;
 }
 
 export interface ShopCashState {
@@ -124,6 +128,7 @@ const MESSAGES: Record<string, string> = {
   paused_no_shows:
     "You cannot ask for cash for a few days, because earlier cash was not collected.",
   own_shop: "You cannot ask for cash from your own shop.",
+  invalid_photo: "That photo could not be used. Try another.",
   invalid_state: "This request has changed. Refresh the page and try again.",
   invalid_idempotency_key: "Something went wrong. Please try again.",
   invalid_location: "We couldn't read your location.",
@@ -191,4 +196,22 @@ export const SHOP_BAND_CHOICES_CENTS = [10000, 20000, 30000, 40000, 50000] as co
 /** Is a status one where the customer's screen should keep refreshing? */
 export function isLiveStatus(status: CashStatus): boolean {
   return status === "awaiting_shop" || status === "held" || status === "awaiting_confirmation";
+}
+
+/**
+ * Fits a photo inside a square of `max` pixels, keeping its shape and never
+ * making it bigger. Phone cameras take pictures far larger than a screen needs;
+ * shrinking them keeps uploads quick on a weak signal.
+ */
+export function fitWithin(
+  width: number,
+  height: number,
+  max: number,
+): { width: number; height: number } {
+  if (width <= 0 || height <= 0) return { width: 0, height: 0 };
+  const scale = Math.min(1, max / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
 }
