@@ -830,12 +830,14 @@ export type Database = {
           business_id: string
           cash_band_cents: number
           enrolled: boolean
+          landmark: string | null
           latitude: number | null
           longitude: number | null
           missed_count: number
           online: boolean
           online_until: string | null
           paused_reason: string | null
+          photo_path: string | null
           small_notes: boolean
           trust_score: number
           updated_at: string
@@ -861,12 +863,34 @@ export type Database = {
           business_id: string
           can_serve: boolean
           distance_m: number
-          landmark: string | null
+          landmark: string
           name: string
-          photo_path: string | null
+          photo_path: string
           suburb: string
           walk_min: number
         }[]
+      }
+      cash_quote: {
+        Args: { p_amount_cents: number; p_rail: string }
+        Returns: Json
+      }
+      cash_reserved_cents: { Args: { p_business: string }; Returns: number }
+      cash_resolve_incident: {
+        Args: { p_incident: string; p_resolution: string }
+        Returns: undefined
+      }
+      cash_set_availability: {
+        Args: {
+          p_band_cents?: number
+          p_business: string
+          p_minutes?: number
+          p_small?: boolean
+        }
+        Returns: Json
+      }
+      cash_set_rail_active: {
+        Args: { p_active: boolean; p_fee_verified?: boolean; p_rail: string }
+        Returns: undefined
       }
       cash_set_shopfront: {
         Args: { p_business: string; p_landmark: string; p_photo_path: string }
@@ -893,28 +917,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      cash_quote: {
-        Args: { p_amount_cents: number; p_rail: string }
-        Returns: Json
-      }
-      cash_reserved_cents: { Args: { p_business: string }; Returns: number }
-      cash_resolve_incident: {
-        Args: { p_incident: string; p_resolution: string }
-        Returns: undefined
-      }
-      cash_set_availability: {
-        Args: {
-          p_band_cents?: number
-          p_business: string
-          p_minutes?: number
-          p_small?: boolean
-        }
-        Returns: Json
-      }
-      cash_set_rail_active: {
-        Args: { p_active: boolean; p_fee_verified?: boolean; p_rail: string }
-        Returns: undefined
       }
       cash_shape: {
         Args: {
