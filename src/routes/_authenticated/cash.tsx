@@ -258,7 +258,7 @@ function AskView({
       <Card variant="quiet">
         <CardBody className="flex flex-col gap-2">
           <Eyebrow>Pay with</Eyebrow>
-          <p className="text-[16px]">{quote?.rail_label ?? "GoTyme via Flash"}</p>
+          <p className="text-[16px]">{quote?.rail_label ?? "Your bank or wallet"}</p>
           {quote ? (
             <>
               <p className="text-[15px] leading-relaxed" data-testid="fee-line">
@@ -669,7 +669,7 @@ function HeldView({
       </Card>
 
       <Body className="text-[14px] text-muted-foreground">
-        Pay on the shop's device with GoTyme. Count your cash before you leave. CashNear never
+        Pay on the shop's own payment device. Count your cash before you leave. CashNear never
         touches the money.
       </Body>
 

@@ -109,6 +109,44 @@
   --ring: var(--gold);
 }
 
+/*
+ * Daylight: the shop's default. Warm paper, near-black ink, and a darker gold so
+ * text stays readable in sunlight. Every text pairing is checked by a test
+ * (src/lib/__tests__/daylight-theme.test.ts) so contrast can't quietly regress.
+ */
+.theme-daylight {
+  color-scheme: light;
+  --background: #FAF7F0;
+  --foreground: #0B1220;
+  --surface: #FFFFFF;
+  --surface-2: #F0EADC;
+  --card: #FFFFFF;
+  --card-foreground: #0B1220;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1220;
+  --primary: #0B1220;
+  --primary-foreground: #FAF7F0;
+  --secondary: #F0EADC;
+  --secondary-foreground: #0B1220;
+  --muted: #F0EADC;
+  --muted-foreground: #4B5568;
+  --accent: #7A5C00;
+  --accent-foreground: #FFFFFF;
+  --gold: #7A5C00;
+  --gold-soft: #8F6D00;
+  --gold-foreground: #FFFFFF;
+  --success: #0B6B52;
+  --success-foreground: #FFFFFF;
+  --destructive: #A12A38;
+  --destructive-foreground: #FFFFFF;
+  --border: rgb(11 18 32 / 0.14);
+  --border-strong: rgb(11 18 32 / 0.3);
+  --input: rgb(11 18 32 / 0.22);
+  --ring: #7A5C00;
+  --shadow-quiet: 0 1px 2px rgb(11 18 32 / 0.08);
+  --shadow-lift: 0 1px 0 0 rgb(255 255 255 / 0.9) inset, 0 10px 30px -14px rgb(11 18 32 / 0.28);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

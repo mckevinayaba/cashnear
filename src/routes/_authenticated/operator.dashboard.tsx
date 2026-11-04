@@ -13,6 +13,7 @@ import {
   Button,
 } from "@/components/ds";
 import { ShopCashDesk } from "@/components/cash/ShopCashDesk";
+import { useShopTheme } from "@/hooks/use-shop-theme";
 import type { Database } from "@/integrations/supabase/types";
 
 type Business = Database["public"]["Tables"]["operator_businesses"]["Row"];
@@ -42,6 +43,7 @@ function OperatorDashboard() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [cashEnrolled, setCashEnrolled] = useState(false);
+  const [theme, toggleTheme] = useShopTheme();
 
   useEffect(() => {
     (async () => {
@@ -105,12 +107,21 @@ function OperatorDashboard() {
       <Screen>
         <header className="flex items-center justify-between pt-2">
           <Eyebrow>Your business</Eyebrow>
-          <button
-            onClick={signOut}
-            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-5">
+            <button
+              onClick={toggleTheme}
+              aria-pressed={theme === "day"}
+              className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
+            >
+              {theme === "day" ? "Night mode" : "Daylight"}
+            </button>
+            <button
+              onClick={signOut}
+              className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
+            >
+              Sign out
+            </button>
+          </div>
         </header>
 
         <div>

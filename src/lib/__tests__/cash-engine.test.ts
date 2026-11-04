@@ -118,6 +118,13 @@ describe("dark by default", () => {
     await expect(goOnline(shopOwner, shop)).rejects.toThrow("not_enrolled");
   });
 
+  test("an unconfirmed rail is not named after a partner", async () => {
+    const [rail] =
+      await db.sql`select label, fee_verified from public.cash_rails where id = ${RAIL}`;
+    expect(rail.fee_verified).toBe(false);
+    expect(rail.label).not.toMatch(/gotyme|flash|capitec|fnb|standard bank|kazang/i);
+  });
+
   test("only a super_admin can activate a rail, and ops_admin cannot", async () => {
     await expect(
       db.as(
