@@ -96,20 +96,8 @@ function Customer() {
           </Card>
         ) : null}
 
-        {loading ? (
-          <Muted>Loading your account…</Muted>
-        ) : showForm ? (
-          <VerificationForm
-            existing={customer}
-            onCancel={() => setShowForm(false)}
-            onDone={async () => {
-              setShowForm(false);
-              await refresh();
-            }}
-          />
-        ) : (
-          <OptionalDetails status={status} onStart={() => setShowForm(true)} />
-        )}
+        {/* ID details are left out of the pilot: nobody is asked for papers. */}
+        {loading ? <Muted>Loading your account…</Muted> : null}
 
         <Card variant="outline">
           <CardBody className="flex flex-col gap-3">
