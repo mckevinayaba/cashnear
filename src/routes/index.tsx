@@ -269,7 +269,6 @@ function SiteHeader({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () 
 /* ---------------- Hero ---------------- */
 
 import counterPhoto from "@/assets/spaza-counter-cash.jpg";
-import shopfrontPhoto from "@/assets/spaza-shopfront.jpg";
 import cityPhoto from "@/assets/hillbrow-corner-store.jpg";
 import ownerPhoto from "@/assets/shop-owner.jpg";
 
