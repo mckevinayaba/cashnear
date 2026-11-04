@@ -612,6 +612,49 @@ describe("disputes and review", () => {
   });
 });
 
+describe("availability can be changed one field at a time", () => {
+  test("omitting arguments leaves them unchanged, as the app now sends them", async () => {
+    await resetShop(shop);
+    await db.sql`update public.cash_points set cash_band_cents = 30000, small_notes = true where business_id = ${shop}`;
+
+    // Only the band: duration and small-notes are omitted entirely.
+    await db.as(
+      shopOwner,
+      "authenticated",
+      (tx) =>
+        tx`select public.cash_set_availability(p_business := ${shop}::uuid, p_band_cents := 20000::int)`,
+    );
+    let [pt] =
+      await db.sql`select cash_band_cents, small_notes, online from public.cash_points where business_id = ${shop}`;
+    expect(pt.cash_band_cents).toBe(20000);
+    expect(pt.small_notes).toBe(true);
+    expect(pt.online).toBe(true);
+
+    // Only going offline.
+    await db.as(
+      shopOwner,
+      "authenticated",
+      (tx) =>
+        tx`select public.cash_set_availability(p_business := ${shop}::uuid, p_minutes := 0::int)`,
+    );
+    [pt] =
+      await db.sql`select cash_band_cents, small_notes, online from public.cash_points where business_id = ${shop}`;
+    expect(pt.online).toBe(false);
+    expect(pt.cash_band_cents).toBe(20000);
+  });
+
+  test("an invalid band is still refused", async () => {
+    await expect(
+      db.as(
+        shopOwner,
+        "authenticated",
+        (tx) =>
+          tx`select public.cash_set_availability(p_business := ${shop}::uuid, p_band_cents := 99000::int)`,
+      ),
+    ).rejects.toThrow("invalid_band");
+  });
+});
+
 describe("audit attribution (restored hardening)", () => {
   test("a super_admin who also holds the customer role is logged as super_admin", async () => {
     await db.sql`insert into public.user_roles (user_id, role) values (${superAdmin}, 'customer') on conflict do nothing`;

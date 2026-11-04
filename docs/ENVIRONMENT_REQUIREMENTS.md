@@ -34,25 +34,29 @@ Then fill in the real values from your Supabase project settings
 
 ## No fallback to a shared/production project
 
-[`vite.config.ts`](../vite.config.ts) reads `VITE_SUPABASE_URL`/`SUPABASE_URL`
-and `VITE_SUPABASE_PUBLISHABLE_KEY`/`SUPABASE_PUBLISHABLE_KEY` and throws
-immediately (failing the dev server start or the build) if either is
-missing. There is deliberately no fallback value of any kind. An earlier
-version of this file hardcoded a literal production Supabase URL and
-anon key as a fallback, meaning a preview/staging build with a missing
-env var would silently connect to the production database instead of
-failing — that failure mode is intentionally not possible now. Every
-environment (local dev, preview, staging, production) must set its own
-values explicitly, pointing at that environment's own Supabase project.
+[`vite.config.ts`](../vite.config.ts) never hardcodes a Supabase URL or key. An
+earlier version of this file hardcoded a literal production URL and anon key as a
+fallback, which meant a preview or staging build with a missing variable would
+silently connect to the production database. That failure mode is gone: every
+environment (local dev, preview, staging, production) must supply its own
+values, pointing at that environment's own Supabase project.
 
-**Running locally:** `vite.config.ts` reads `.env`/`.env.local` itself
-via Vite's own `loadEnv()` (real, already-exported shell/process
-variables still take priority over the file values), so `bun run dev` /
-`bun run build` just work once `.env` or `.env.local` exists with real
-values -- no manual `export`/`source` step needed. If neither file
-exists and nothing is exported, the dev server/build now fails
-immediately with a clear "Missing required environment variable(s)"
-error instead of silently using someone else's project.
+How a missing variable is reported:
+
+- **At config load**, `vite.config.ts` prints a warning naming the missing
+  variables (never their values). It does **not** throw, because Lovable's
+  managed build wraps this config and injects the variables after it loads;
+  throwing here broke managed builds. This rule is recorded in `AGENTS.md`.
+- **At runtime**, the Supabase client (`src/integrations/supabase/client.ts`)
+  throws "Missing Supabase environment variable(s)" the first time it is used
+  without values, so a misconfigured build fails visibly instead of connecting
+  anywhere.
+
+**Running locally:** `vite.config.ts` reads `.env`/`.env.local` through Vite's
+own `loadEnv()` (real, already-exported variables take priority), so
+`bun run dev` and `bun run build` work once `.env` or `.env.local` has real
+values. With neither present you get the warning at startup and the runtime error
+on first use.
 
 ## Uptime monitoring
 

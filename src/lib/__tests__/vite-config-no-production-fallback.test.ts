@@ -2,13 +2,14 @@ import { describe, test, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// Structural regression guard: vite.config.ts previously hardcoded a real
-// production Supabase URL and anon/publishable key as fallback values, so a
-// staging/preview build with a missing env var would silently connect to
-// production instead of failing. This checks the actual config source so it
-// works without needing a DOM/build test environment (config-loading
-// side-effects like `throw` at module scope don't lend themselves to a
-// simple bun:test import).
+// Structural regression guard. vite.config.ts once hardcoded a real production
+// Supabase URL and anon key as fallback values, so a staging or preview build
+// with a missing env var would silently connect to production.
+//
+// The fix is "no fallback, ever". It is NOT "throw at config load": Lovable's
+// managed build wraps this config and injects env after it loads, so throwing
+// here broke managed builds (see AGENTS.md). The config warns instead, and the
+// Supabase client fails loudly the first time it is used without values.
 
 const repoRoot = join(import.meta.dir, "..", "..", "..");
 
@@ -32,21 +33,32 @@ describe("vite.config.ts has no production Supabase fallback", () => {
     );
   });
 
-  test("throws when a required Supabase env var is missing, instead of falling back", () => {
-    expect(src).toMatch(/if\s*\(\s*missingVars\.length\s*>\s*0\s*\)/);
-    expect(src).toContain("throw new Error(");
+  test("hardcodes no Supabase URL of any project", () => {
+    expect(src).not.toMatch(/[a-z0-9]{20}\.supabase\.co/);
+  });
+});
+
+describe("a missing Supabase variable is reported without breaking managed builds", () => {
+  const src = read("vite.config.ts");
+
+  test("the config warns instead of throwing at load time", () => {
+    expect(src).toContain("console.warn(");
+    expect(src).not.toContain("throw new Error(");
   });
 
-  test("checks both VITE_SUPABASE_URL/SUPABASE_URL and the publishable key before proceeding", () => {
-    expect(src).toMatch(/!supabaseUrl/);
-    expect(src).toMatch(/!supabasePublishableKey/);
+  test("the warning names the missing variables but never prints a value", () => {
+    const warn = src.slice(src.indexOf("console.warn("));
+    expect(warn).toContain("missingVars.join");
+    expect(warn).not.toMatch(/env\.VITE_SUPABASE|process\.env/);
   });
 
-  test("the thrown message names the missing variables but never a secret value", () => {
-    const match = src.match(/throw new Error\(\s*`([^`]*)/);
-    expect(match).not.toBeNull();
-    const messageTemplate = match?.[1] ?? "";
-    expect(messageTemplate).toContain("Missing required environment variable");
-    expect(messageTemplate).not.toMatch(/eyJ|supabase\.co\/|service_role/i);
+  test("the Supabase client still fails loudly at runtime when values are absent", () => {
+    const client = read("src/integrations/supabase/client.ts");
+    expect(client).toContain("Missing Supabase environment variable(s)");
+    expect(client).toMatch(/throw new Error\(message\)/);
+  });
+
+  test("the rule is recorded for future contributors", () => {
+    expect(read("AGENTS.md")).toMatch(/vite\.config\.ts must never throw on missing Supabase env/);
   });
 });
