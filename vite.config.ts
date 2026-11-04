@@ -4,25 +4,40 @@
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
+import { readFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { loadEnv } from "vite";
 
-// No production fallback here, ever: never hardcode a Supabase URL/key.
-// VITE_* values are injected by @lovable.dev/vite-tanstack-config. The managed
-// build wraps this config and supplies env after config load, so a missing var
-// here must only WARN — throwing at config-load time breaks managed builds.
-// The Supabase client itself still fails loudly at runtime if values are absent.
-// (Republish after env rebind: 2026-11-04.)
+// The root .env is git-ignored in this repo, so published builds never see it.
+// cloud.public.json (committed) holds ONLY the public backend URL + publishable
+// key for this project's single Lovable Cloud backend. It is used only for vars
+// that are missing; real env always wins. Never put private keys in that file.
+// A missing var still only WARNS here — throwing at config load breaks builds.
 const env = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
-const missingVars = [
-  ...(!(env.VITE_SUPABASE_URL ?? env.SUPABASE_URL) ? ["VITE_SUPABASE_URL"] : []),
-  ...(!(env.VITE_SUPABASE_PUBLISHABLE_KEY ?? env.SUPABASE_PUBLISHABLE_KEY)
-    ? ["VITE_SUPABASE_PUBLISHABLE_KEY"]
-    : []),
-];
+const publicCfgPath = resolve(process.cwd(), "cloud.public.json");
+const publicCfg: Record<string, string> = existsSync(publicCfgPath)
+  ? JSON.parse(readFileSync(publicCfgPath, "utf8"))
+  : {};
+
+const KEYS = ["VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_PROJECT_ID"];
+const define: Record<string, string> = {};
+const missingVars: string[] = [];
+for (const key of KEYS) {
+  const value = env[key] || env[key.replace(/^VITE_/, "")] || publicCfg[key];
+  if (!value) {
+    missingVars.push(key);
+    continue;
+  }
+  if (!env[key]) {
+    define[`import.meta.env.${key}`] = JSON.stringify(value);
+    process.env[key] ??= value;
+    process.env[key.replace(/^VITE_/, "")] ??= value;
+  }
+}
 if (missingVars.length > 0) {
   console.warn(
-    `[cashnear] Supabase env not visible at config load: ${missingVars.join(", ")}. ` +
+    `[cashnear] Backend env not visible at config load: ${missingVars.join(", ")}. ` +
       "Expecting the build environment to inject them; see .env.example.",
   );
 }
@@ -33,4 +48,5 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: { define },
 });
