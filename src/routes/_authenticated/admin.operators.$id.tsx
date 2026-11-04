@@ -21,6 +21,7 @@ import { isReasonRequired } from "@/lib/admin-reason-validation";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { DocumentLink } from "@/components/admin/DocumentLink";
 import { StatusBadge, OPERATOR_STATUS_TONE } from "@/components/admin/StatusBadge";
+import { DEMO_OPERATOR_OWNER_USER_ID } from "@/lib/demo-accounts";
 import {
   IDENTITY_DOCUMENT_LABELS,
   BUSINESS_STRUCTURE_LABELS,
@@ -147,7 +148,9 @@ function OperatorReview() {
             ← Queue
           </Link>
         </div>
-        <Eyebrow>Application review</Eyebrow>
+        <Eyebrow>
+          Application review{b.owner_id === DEMO_OPERATOR_OWNER_USER_ID ? " · Demo account" : ""}
+        </Eyebrow>
         <Display className="text-[42px]">{b.trading_name || b.legal_name}</Display>
         <div className="flex items-center gap-3">
           <Muted>

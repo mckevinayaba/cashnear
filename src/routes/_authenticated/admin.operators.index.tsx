@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, Screen, Eyebrow, Display, Muted, Card, CardBody } from "@/components/ds";
 import { requireAdminBeforeLoad } from "@/lib/admin-route-guard";
+import { DEMO_OPERATOR_OWNER_USER_ID } from "@/lib/demo-accounts";
 import type { Database } from "@/integrations/supabase/types";
 
 type Business = Database["public"]["Tables"]["operator_businesses"]["Row"];
@@ -137,6 +138,11 @@ function AdminOperators() {
                         <span className="truncate font-display text-[20px] text-foreground">
                           {b.trading_name || b.legal_name || "Unnamed"}
                         </span>
+                        {b.owner_id === DEMO_OPERATOR_OWNER_USER_ID ? (
+                          <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                            Demo
+                          </span>
+                        ) : null}
                         <span
                           className={
                             STATUS_TONE[b.application_status] +

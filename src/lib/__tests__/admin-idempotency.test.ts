@@ -25,10 +25,13 @@ describe("admin review functions are idempotent against duplicate submissions", 
   test("reviewOperatorApplication short-circuits when already at the target status", () => {
     const fn = extractFunctionBody(src, "reviewOperatorApplication");
     expect(fn).toMatch(/current\.application_status\s*===\s*data\.decision/);
-    // The idempotency check must come before the mutating supabaseAdmin
-    // update, not after -- otherwise it can't prevent the duplicate write.
+    // The idempotency check must come before the mutating .update() write,
+    // not after -- otherwise it can't prevent the duplicate write. (Not
+    // indexOf("supabaseAdmin") -- that client is also imported earlier, for
+    // the per-admin rate limit check, so its first mention alone no longer
+    // marks where the write itself begins.)
     const guardIndex = fn.search(/current\.application_status\s*===\s*data\.decision/);
-    const updateIndex = fn.indexOf("supabaseAdmin");
+    const updateIndex = fn.search(/\.update\(\{/);
     expect(guardIndex).toBeGreaterThan(-1);
     expect(updateIndex).toBeGreaterThan(-1);
     expect(guardIndex).toBeLessThan(updateIndex);
@@ -38,19 +41,19 @@ describe("admin review functions are idempotent against duplicate submissions", 
     const fn = extractFunctionBody(src, "reviewCustomerVerification");
     expect(fn).toMatch(/current\.verification_status\s*===\s*data\.decision/);
     const guardIndex = fn.search(/current\.verification_status\s*===\s*data\.decision/);
-    const updateIndex = fn.indexOf("supabaseAdmin");
+    const updateIndex = fn.search(/\.update\(\{/);
     expect(guardIndex).toBeGreaterThan(-1);
     expect(updateIndex).toBeGreaterThan(-1);
     expect(guardIndex).toBeLessThan(updateIndex);
   });
 
   test("the idempotent no-op path does not touch verification_reviews or audit_logs", () => {
-    // A narrower slice: from the guard's `return` to the next blank line
+    // A narrower slice: from the guard's `return` to the mutating write
     // shouldn't reach into the mutation/audit code that follows it.
     const fn = extractFunctionBody(src, "reviewOperatorApplication");
     const guardBlock = fn.slice(
       fn.search(/current\.application_status\s*===\s*data\.decision/),
-      fn.indexOf("supabaseAdmin"),
+      fn.search(/\.update\(\{/),
     );
     expect(guardBlock).not.toContain("verification_reviews");
     expect(guardBlock).not.toContain("log_audit_event");

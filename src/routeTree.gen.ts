@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AccessDeniedRouteImport } from './routes/access-denied'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -38,6 +39,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/access-denied': typeof AccessDeniedRoute
   '/auth': typeof AuthRoute
+  '/health': typeof HealthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/access-denied': typeof AccessDeniedRoute
   '/auth': typeof AuthRoute
+  '/health': typeof HealthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/customer': typeof AuthenticatedCustomerRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/access-denied': typeof AccessDeniedRoute
   '/auth': typeof AuthRoute
+  '/health': typeof HealthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/'
     | '/access-denied'
     | '/auth'
+    | '/health'
     | '/reset-password'
     | '/sitemap.xml'
     | '/admin'
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/'
     | '/access-denied'
     | '/auth'
+    | '/health'
     | '/reset-password'
     | '/sitemap.xml'
     | '/customer'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/access-denied'
     | '/auth'
+    | '/health'
     | '/reset-password'
     | '/sitemap.xml'
     | '/_authenticated/admin'
@@ -269,6 +281,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AccessDeniedRoute: typeof AccessDeniedRoute
   AuthRoute: typeof AuthRoute
+  HealthRoute: typeof HealthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
@@ -289,6 +302,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -481,6 +501,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AccessDeniedRoute: AccessDeniedRoute,
   AuthRoute: AuthRoute,
+  HealthRoute: HealthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
@@ -489,3 +510,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

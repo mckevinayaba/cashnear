@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { applicantCanEdit } from "@/lib/operator-application-state";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import {
   requiresImmigrationStatusDocument,
   getCompletionChecklist,
@@ -148,6 +149,12 @@ export const upsertOperatorApplication = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { submit, agreements_accepted, business_id, ...fields } = data;
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await enforceRateLimit(supabaseAdmin, "operator_application_upsert", userId, {
+      maxAttempts: 20,
+      windowSeconds: 600,
+    });
+
     // Applicant-editable business content only. application_status,
     // submitted_at, reviewed_at, reviewed_by, review_notes are excluded here
     // by design -- migration 20260718070100 revokes column-level UPDATE on
@@ -188,8 +195,6 @@ export const upsertOperatorApplication = createServerFn({ method: "POST" })
       representative_relationship: fields.representative_relationship || null,
       agreements_accepted_at: agreements_accepted ? new Date().toISOString() : null,
     };
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     let businessId = business_id;
     if (businessId) {

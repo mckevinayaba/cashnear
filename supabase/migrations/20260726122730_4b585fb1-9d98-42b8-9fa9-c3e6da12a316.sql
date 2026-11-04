@@ -1,12 +1,20 @@
 
 -- Enums
-CREATE TYPE public.identity_document_type AS ENUM (
-  'sa_id','passport','asylum_permit','refugee_permit','permanent_residence_permit'
-);
+-- Made idempotent (Nov 2026): these types are also created by
+-- 20260718100000_operator_identity_document_fields.sql, so replaying the
+-- chain on a fresh database failed here. No effect on databases that already
+-- applied this file.
+DO $$ BEGIN
+  CREATE TYPE public.identity_document_type AS ENUM (
+    'sa_id','passport','asylum_permit','refugee_permit','permanent_residence_permit'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE public.business_structure_type AS ENUM (
-  'sole_trader','registered_company','close_corporation','partnership','cooperative','other'
-);
+DO $$ BEGIN
+  CREATE TYPE public.business_structure_type AS ENUM (
+    'sole_trader','registered_company','close_corporation','partnership','cooperative','other'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Extend document_type enum
 ALTER TYPE public.document_type ADD VALUE IF NOT EXISTS 'immigration_status';
@@ -23,6 +31,10 @@ ALTER TABLE public.operator_businesses
   ADD COLUMN IF NOT EXISTS representative_immigration_status_expiry date;
 
 -- Audit event RPC
+-- Dropped first because CREATE OR REPLACE cannot change a return type, and the
+-- hardened version from 20260718070400 returns audit_logs, not uuid. The
+-- hardened version is restored by the next hardening migration.
+DROP FUNCTION IF EXISTS public.log_audit_event(text, text, text, jsonb);
 CREATE OR REPLACE FUNCTION public.log_audit_event(
   p_action text,
   p_entity_type text,

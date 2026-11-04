@@ -1,9 +1,23 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell, Screen, Eyebrow, Display, Muted, Body, Card, CardBody } from "@/components/ds";
+import {
+  AppShell,
+  Screen,
+  Eyebrow,
+  Display,
+  Muted,
+  Body,
+  Card,
+  CardBody,
+  Button,
+} from "@/components/ds";
 import { useAuth } from "@/hooks/use-auth";
 import { requireAdminBeforeLoad } from "@/lib/admin-route-guard";
+import { DEMO_CUSTOMER_USER_ID, DEMO_OPERATOR_OWNER_USER_ID } from "@/lib/demo-accounts";
+import { resetDemoAccount } from "@/lib/demo-admin.functions";
+import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type AuditLog = Database["public"]["Tables"]["audit_logs"]["Row"];
@@ -44,7 +58,10 @@ function AdminHome() {
           supabase
             .from("operator_businesses")
             .select("id", { count: "exact", head: true })
-            .eq("application_status", s),
+            .eq("application_status", s)
+            // Exclude the synthetic demo operator -- these counts are
+            // meant to reflect real operational activity.
+            .neq("owner_id", DEMO_OPERATOR_OWNER_USER_ID),
         ),
       );
       setOperatorCounts({
@@ -61,7 +78,9 @@ function AdminHome() {
           supabase
             .from("customer_profiles")
             .select("user_id", { count: "exact", head: true })
-            .eq("verification_status", s),
+            .eq("verification_status", s)
+            // Exclude the synthetic demo customer -- see DEMO_CUSTOMER_USER_ID.
+            .neq("user_id", DEMO_CUSTOMER_USER_ID),
         ),
       );
       setCustomerCounts({
@@ -185,8 +204,61 @@ function AdminHome() {
             )}
           </div>
         </section>
+
+        {auth.hasRole("super_admin") ? <DemoControls /> : null}
       </Screen>
     </AppShell>
+  );
+}
+
+/**
+ * Founder-only (super_admin-only) demo reset controls. Deliberately not a
+ * generic "delete any account" tool -- each button maps to a fixed
+ * `target: "customer" | "operator"` that the server resolves to the
+ * hardcoded DEMO_CUSTOMER_USER_ID / DEMO_OPERATOR_OWNER_USER_ID constants
+ * (see demo-accounts.ts and demo-admin.functions.ts). There is no input
+ * here a client could use to target a real account.
+ */
+function DemoControls() {
+  const reset = useServerFn(resetDemoAccount);
+  const [pending, setPending] = useState<"customer" | "operator" | null>(null);
+  const [lastResult, setLastResult] = useState<string | null>(null);
+
+  return (
+    <section>
+      <Eyebrow>Founder demo controls</Eyebrow>
+      <Card variant="outline" className="mt-3">
+        <CardBody className="flex flex-col gap-3">
+          <Body className="text-[14px] text-muted-foreground">
+            Resets the synthetic demo customer/operator back to a blank, freshly-signed-up state --
+            for use before or after a founder demonstration. This can never affect a real customer
+            or operator account.
+          </Body>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="ghost" onClick={() => setPending("customer")}>
+              Reset demo customer
+            </Button>
+            <Button variant="ghost" onClick={() => setPending("operator")}>
+              Reset demo operator
+            </Button>
+          </div>
+          {lastResult ? <Muted>{lastResult}</Muted> : null}
+        </CardBody>
+      </Card>
+
+      <ConfirmActionDialog
+        open={pending !== null}
+        onOpenChange={(o) => !o && setPending(null)}
+        title={pending === "customer" ? "Reset the demo customer?" : "Reset the demo operator?"}
+        description="This deletes the demo account's application/verification data and uploaded demo documents, returning it to a blank, freshly-signed-up state. This only ever affects the designated demo account."
+        confirmLabel="Reset"
+        onConfirm={async () => {
+          if (!pending) return;
+          await reset({ data: { target: pending } });
+        }}
+        onSuccess={() => setLastResult(`Demo ${pending} reset.`)}
+      />
+    </section>
   );
 }
 

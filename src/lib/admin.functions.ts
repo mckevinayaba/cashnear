@@ -7,7 +7,14 @@ import {
   canReinstateFrom,
   isReinstatementActorEligible,
 } from "@/lib/operator-application-state";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import type { Database } from "@/integrations/supabase/types";
+
+// Shared across every admin mutation below -- generous enough not to
+// disrupt a normal admin working through a review queue, while still
+// bounding a compromised session or buggy/scripted client. Keyed on the
+// acting admin's own userId, not IP (unreliable behind Lovable/Supabase).
+const ADMIN_MUTATION_RATE_LIMIT = { maxAttempts: 60, windowSeconds: 600 };
 
 const REASON_REQUIRED_DECISIONS = new Set(["rejected", "suspended"]);
 const MIN_REASON_LENGTH = 10;
@@ -56,6 +63,8 @@ export const reviewOperatorApplication = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const role = await assertAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await enforceRateLimit(supabaseAdmin, "admin_mutation", userId, ADMIN_MUTATION_RATE_LIMIT);
 
     const { data: current, error: readErr } = await supabase
       .from("operator_businesses")
@@ -82,7 +91,6 @@ export const reviewOperatorApplication = createServerFn({ method: "POST" })
       );
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const nowIso = new Date().toISOString();
 
     const { error: updErr } = await supabaseAdmin
@@ -146,6 +154,8 @@ export const reinstateOperator = createServerFn({ method: "POST" })
     if (role !== "super_admin") {
       throw new Error("Only super_admin can reinstate a suspended operator.");
     }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await enforceRateLimit(supabaseAdmin, "admin_mutation", userId, ADMIN_MUTATION_RATE_LIMIT);
 
     const { data: business, error: readErr } = await supabase
       .from("operator_businesses")
@@ -178,7 +188,6 @@ export const reinstateOperator = createServerFn({ method: "POST" })
       );
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const nowIso = new Date().toISOString();
 
     const { error: updErr } = await supabaseAdmin
@@ -248,6 +257,8 @@ export const reviewCustomerVerification = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const role = await assertAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await enforceRateLimit(supabaseAdmin, "admin_mutation", userId, ADMIN_MUTATION_RATE_LIMIT);
 
     const { data: current, error: readErr } = await supabase
       .from("customer_profiles")
@@ -264,7 +275,6 @@ export const reviewCustomerVerification = createServerFn({ method: "POST" })
       return { ok: true, status: data.decision, alreadyApplied: true as const };
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: updErr } = await supabaseAdmin
       .from("customer_profiles")
       .update({
@@ -304,8 +314,9 @@ export const grantUserRole = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const role = await assertAdmin(supabase, userId);
     if (role !== "super_admin") throw new Error("Only super_admin can grant roles.");
-
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await enforceRateLimit(supabaseAdmin, "admin_mutation", userId, ADMIN_MUTATION_RATE_LIMIT);
+
     const { error } = await supabaseAdmin
       .from("user_roles")
       .upsert(

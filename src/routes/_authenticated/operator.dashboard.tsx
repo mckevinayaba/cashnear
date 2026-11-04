@@ -134,16 +134,11 @@ function OperatorDashboard() {
                 Note from CashNear: {business.review_notes}
               </Body>
             ) : null}
-            {business.application_status === "approved" ? (
-              <Body className="text-[14px] text-muted-foreground">
-                Your business has been approved. Cash requests are not open yet. We will let you
-                know when you can start.
-              </Body>
-            ) : (
+            {business.application_status !== "approved" ? (
               <Body className="text-[14px] text-muted-foreground">
                 We are checking your business. This usually takes 24 hours.
               </Body>
-            )}
+            ) : null}
             {editable ? (
               <Link to="/operator/apply" className="mt-2">
                 <Button fullWidth>Continue registering</Button>
@@ -152,15 +147,50 @@ function OperatorDashboard() {
           </CardBody>
         </Card>
 
-        <Card variant="outline">
-          <CardBody className="flex flex-col gap-2">
-            <Eyebrow>Coming soon</Eyebrow>
-            <Body className="text-[14px] text-muted-foreground">
-              When cash requests open, you will choose when you're available, see requests, and get
-              paid.
-            </Body>
-          </CardBody>
-        </Card>
+        {business.application_status === "approved" ? (
+          <Card variant="lift">
+            <CardBody className="flex flex-col gap-3">
+              <Display className="text-[24px]">Your business is approved.</Display>
+              <Body className="text-[14px] text-muted-foreground">
+                Cash requests are not open yet. We are preparing the first group of CashNear
+                businesses and will contact you before requests begin.
+              </Body>
+              <ul className="flex flex-col gap-1 text-[14px] text-muted-foreground">
+                <li>✓ Application approved</li>
+                <li>✓ Documents accepted</li>
+                <li>— Customer cash requests: not open yet</li>
+              </ul>
+              <div>
+                <Eyebrow>What happens next</Eyebrow>
+                <Body className="mt-1 text-[14px] text-muted-foreground">
+                  We're onboarding the first group of CashNear businesses in Johannesburg. We'll
+                  contact you using the details on your application before customer requests open
+                  for your business.
+                </Body>
+              </div>
+              <div>
+                <Eyebrow>Need to update your details, or have a question?</Eyebrow>
+                <Body className="mt-1 text-[14px] text-muted-foreground">
+                  Email{" "}
+                  <a href="mailto:support@cashnear.co" className="underline">
+                    support@cashnear.co
+                  </a>{" "}
+                  and we'll help, including updating contact details on file.
+                </Body>
+              </div>
+            </CardBody>
+          </Card>
+        ) : (
+          <Card variant="outline">
+            <CardBody className="flex flex-col gap-2">
+              <Eyebrow>Coming soon</Eyebrow>
+              <Body className="text-[14px] text-muted-foreground">
+                When cash requests open, you will choose when you're available, see requests, and
+                get paid.
+              </Body>
+            </CardBody>
+          </Card>
+        )}
       </Screen>
     </AppShell>
   );

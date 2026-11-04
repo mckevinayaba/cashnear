@@ -2,7 +2,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { submitCustomerVerification } from "@/lib/customer.functions";
+import { submitCustomerVerification, updateCustomerDocumentPath } from "@/lib/customer.functions";
+import { uploadCustomerDocument } from "@/lib/customer-documents-client";
+import {
+  isValidMobileNumber,
+  MOBILE_NUMBER_ERROR,
+  MOBILE_NUMBER_HELPER_TEXT,
+} from "@/lib/phone-number";
 import {
   AppShell,
   Screen,
@@ -87,6 +93,7 @@ function Customer() {
           <VerifiedHome />
         ) : showForm ? (
           <VerificationForm
+            existing={customer}
             onCancel={() => setShowForm(false)}
             onDone={async () => {
               setShowForm(false);
@@ -276,19 +283,36 @@ function VerifiedHome() {
 
 /* -------- Verification form -------- */
 
-function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: () => void }) {
+function VerificationForm({
+  existing,
+  onCancel,
+  onDone,
+}: {
+  existing: CustomerProfile | null;
+  onCancel: () => void;
+  onDone: () => void;
+}) {
   const submitFn = useServerFn(submitCustomerVerification);
+  const updatePathFn = useServerFn(updateCustomerDocumentPath);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const [fullName, setFullName] = useState("");
-  const [mobile, setMobile] = useState("");
-  const [idType, setIdType] = useState<"sa_id" | "passport" | "asylum" | "refugee">("sa_id");
-  const [idNumber, setIdNumber] = useState("");
-  const [idPath, setIdPath] = useState<string | null>(null);
-  const [selfiePath, setSelfiePath] = useState<string | null>(null);
+  const [fullName, setFullName] = useState(existing?.full_legal_name ?? "");
+  const [mobile, setMobile] = useState(existing?.mobile_number ?? "");
+  const [idType, setIdType] = useState<"sa_id" | "passport" | "asylum" | "refugee">(
+    (existing?.id_document_type as "sa_id" | "passport" | "asylum" | "refugee") ?? "sa_id",
+  );
+  const [idNumber, setIdNumber] = useState(existing?.id_document_number ?? "");
+  // Seeded from the existing record (not just blank) so that resubmitting
+  // after rejection -- or simply fixing an unrelated field -- doesn't force
+  // a customer to re-upload a document that's still on record, and so a
+  // genuine replacement can find and clean up the previous object rather
+  // than silently orphaning it.
+  const [idPath, setIdPath] = useState<string | null>(existing?.id_document_path ?? null);
+  const [selfiePath, setSelfiePath] = useState<string | null>(existing?.selfie_path ?? null);
   const [consent, setConsent] = useState(false);
+  const [mobileError, setMobileError] = useState<string | null>(null);
 
   const upload = async (file: File, kind: "id" | "selfie", setPath: (p: string) => void) => {
     setUploading(true);
@@ -296,12 +320,11 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not signed in.");
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-      const path = `${userData.user.id}/${kind}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage
-        .from("customer-documents")
-        .upload(path, file, { upsert: true, contentType: file.type });
-      if (error) throw error;
+      const { path } = await uploadCustomerDocument(supabase, updatePathFn, {
+        userId: userData.user.id,
+        kind,
+        file,
+      });
       setPath(path);
     } catch (e) {
       setError(
@@ -315,7 +338,7 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
   const canSubmit = useMemo(
     () =>
       fullName.trim().length >= 2 &&
-      mobile.trim().length >= 10 &&
+      isValidMobileNumber(mobile) &&
       idNumber.trim().length >= 6 &&
       idPath &&
       consent &&
@@ -327,6 +350,11 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idPath) return;
+    if (!isValidMobileNumber(mobile)) {
+      setMobileError(MOBILE_NUMBER_ERROR);
+      return;
+    }
+    setMobileError(null);
     setBusy(true);
     setError(null);
     try {
@@ -367,12 +395,17 @@ function VerificationForm({ onCancel, onDone }: { onCancel: () => void; onDone: 
         autoComplete="name"
       />
       <Field
-        label="South African mobile number"
+        label="Mobile number"
         value={mobile}
-        onChange={setMobile}
-        placeholder="e.g. 0821234567"
+        onChange={(v) => {
+          setMobile(v);
+          if (mobileError) setMobileError(null);
+        }}
+        placeholder="e.g. +27 82 123 4567"
         inputMode="tel"
         autoComplete="tel"
+        helper={MOBILE_NUMBER_HELPER_TEXT}
+        error={mobileError}
       />
 
       <label className="flex flex-col gap-2">
@@ -446,11 +479,15 @@ function Field({
   label,
   value,
   onChange,
+  helper,
+  error,
   ...rest
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  helper?: string;
+  error?: string | null;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value">) {
   return (
     <label className="flex flex-col gap-2">
@@ -461,6 +498,13 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         className="h-12 rounded-2xl border border-border-strong bg-surface px-4 text-[15px] text-foreground placeholder:text-muted-foreground/60 focus:border-gold focus:outline-none"
       />
+      {error ? (
+        <span className="text-[12px] text-destructive" role="alert">
+          {error}
+        </span>
+      ) : helper ? (
+        <span className="text-[12px] text-muted-foreground">{helper}</span>
+      ) : null}
     </label>
   );
 }

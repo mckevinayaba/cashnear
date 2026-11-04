@@ -9,6 +9,7 @@ import { DocumentLink } from "@/components/admin/DocumentLink";
 import { StatusBadge, CUSTOMER_STATUS_TONE } from "@/components/admin/StatusBadge";
 import { AppShell, Screen, Eyebrow, Display, Muted, Card, CardBody } from "@/components/ds";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DEMO_CUSTOMER_USER_ID } from "@/lib/demo-accounts";
 import type { Database } from "@/integrations/supabase/types";
 
 type CustomerProfile = Database["public"]["Tables"]["customer_profiles"]["Row"];
@@ -138,6 +139,9 @@ function AdminCustomers() {
                           <span className="truncate font-display text-[18px] text-foreground">
                             {c.full_legal_name || profile?.full_name || profile?.email || "Unnamed"}
                           </span>
+                          {c.user_id === DEMO_CUSTOMER_USER_ID ? (
+                            <StatusBadge label="Demo" tone="muted" />
+                          ) : null}
                           <StatusBadge label={c.verification_status} tone={tone} />
                         </div>
                         <p className="mt-1 text-[13px] text-muted-foreground">
@@ -263,7 +267,10 @@ function CustomerReviewDialog({
           {customer ? (
             <>
               <DialogHeader>
-                <Eyebrow>Verification review</Eyebrow>
+                <Eyebrow>
+                  Verification review
+                  {customer.user_id === DEMO_CUSTOMER_USER_ID ? " · Demo account" : ""}
+                </Eyebrow>
                 <DialogTitle className="font-display text-[26px] font-normal tracking-normal text-foreground">
                   {customer.full_legal_name || profile?.full_name || "Unnamed customer"}
                 </DialogTitle>
