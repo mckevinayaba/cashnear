@@ -1,3 +1,4 @@
+import { PublicTabBar } from "@/components/ds/AppNav";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -82,7 +83,8 @@ function PublicHome() {
   };
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="min-h-dvh bg-background pb-24 text-foreground lg:pb-0">
+      <PublicTabBar signedIn={signedIn} />
       {/* A phone gets the app's welcome screen. A computer gets the website. */}
       <div className="hidden lg:contents">
         <SiteHeader signedIn={signedIn} onSignOut={signOut} />

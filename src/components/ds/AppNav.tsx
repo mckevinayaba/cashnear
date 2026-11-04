@@ -87,7 +87,7 @@ export function BottomNav({ items, pathname }: { items: readonly NavItem[]; path
                   active ? "text-foreground" : "text-muted-foreground active:text-foreground",
                 )}
               >
-                {active ? (
+                {active && !item.primary ? (
                   <span
                     aria-hidden="true"
                     className="absolute top-0 h-[3px] w-9 rounded-full bg-gold"
@@ -96,7 +96,8 @@ export function BottomNav({ items, pathname }: { items: readonly NavItem[]; path
                 <span
                   className={cn(
                     "grid h-9 w-9 place-items-center rounded-full",
-                    item.primary && "bg-gold text-gold-foreground",
+                    item.primary &&
+                      "-mt-5 h-14 w-14 bg-gold text-gold-foreground shadow-lg ring-4 ring-background",
                   )}
                 >
                   <Glyph name={item.glyph} active={active} />
@@ -171,6 +172,64 @@ export function SideNav({
         </div>
       </div>
     </aside>
+  );
+}
+
+/**
+ * Public website on a phone: the same app-style bar along the bottom, so the
+ * site feels like the app before anyone signs in. Gold "Get cash" sits raised
+ * in the middle, like the create button on TikTok or Instagram.
+ */
+export function PublicTabBar({ signedIn }: { signedIn: boolean }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const hash = useRouterState({ select: (s) => s.location.hash });
+  const tab =
+    "flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground active:text-foreground";
+  const on = "text-foreground";
+  return (
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[max(env(safe-area-inset-bottom),0.25rem)] backdrop-blur-xl lg:hidden"
+    >
+      <ul className="mx-auto grid max-w-[560px] grid-cols-5 items-end">
+        <li>
+          <Link to="/" hash="" className={cn(tab, pathname === "/" && !hash && on)}>
+            <Glyph name="home" active={pathname === "/" && !hash} />
+            Home
+          </Link>
+        </li>
+        <li>
+          <Link to="/" hash="how" className={cn(tab, hash === "how" && on)}>
+            <Glyph name="activity" active={hash === "how"} />
+            How it works
+          </Link>
+        </li>
+        <li className="flex justify-center">
+          <Link
+            to={signedIn ? "/cash" : "/auth"}
+            aria-label="Get cash"
+            className="-mt-5 flex flex-col items-center gap-1 text-[11px] font-medium text-foreground"
+          >
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-gold text-gold-foreground shadow-lg ring-4 ring-background">
+              <Glyph name="cash" active />
+            </span>
+            Get cash
+          </Link>
+        </li>
+        <li>
+          <Link to="/" hash="operators" className={cn(tab, hash === "operators" && on)}>
+            <Glyph name="desk" active={hash === "operators"} />
+            For shops
+          </Link>
+        </li>
+        <li>
+          <Link to={signedIn ? "/account" : "/auth"} className={tab}>
+            <Glyph name="account" active={false} />
+            {signedIn ? "Account" : "Sign in"}
+          </Link>
+        </li>
+      </ul>
+    </nav>
   );
 }
 
