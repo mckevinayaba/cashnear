@@ -871,10 +871,10 @@ export type Database = {
       }
       cash_set_availability: {
         Args: {
-          p_band_cents: number
+          p_band_cents?: number
           p_business: string
-          p_minutes: number
-          p_small: boolean
+          p_minutes?: number
+          p_small?: boolean
         }
         Returns: Json
       }

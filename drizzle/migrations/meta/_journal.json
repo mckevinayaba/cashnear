@@ -8,6 +8,13 @@
       "when": 1793782654572,
       "tag": "0000_cash_hold_engine",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793782716455,
+      "tag": "0001_cash_set_availability_nullable_defaults",
+      "breakpoints": true
     }
   ]
 }
