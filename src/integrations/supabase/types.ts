@@ -796,6 +796,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cash_admin_requests: {
+        Args: {
+          p_export?: boolean
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_status?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
+      cash_admin_shops: { Args: { p_days?: number }; Returns: Json }
+      cash_admin_summary: { Args: { p_days?: number }; Returns: Json }
       cash_cfg: { Args: { p_default: number; p_key: string }; Returns: number }
       cash_clear_pause: {
         Args: { p_business: string; p_note: string }
@@ -852,20 +866,6 @@ export type Database = {
       cash_get_request: { Args: { p_id: string }; Returns: Json }
       cash_my_active: { Args: never; Returns: Json }
       cash_my_history: { Args: { p_limit?: number }; Returns: Json }
-      cash_admin_summary: { Args: { p_days?: number }; Returns: Json }
-      cash_admin_shops: { Args: { p_days?: number }; Returns: Json }
-      cash_admin_requests: {
-        Args: {
-          p_export?: boolean
-          p_from?: string
-          p_limit?: number
-          p_offset?: number
-          p_search?: string
-          p_status?: string
-          p_to?: string
-        }
-        Returns: Json
-      }
       cash_nearby: {
         Args: {
           p_amount_cents: number
