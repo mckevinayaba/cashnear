@@ -60,9 +60,8 @@ Sign out and back in. You should now reach `/admin`.
    the shop's latitude and longitude, then **Enrol shop**.
    - To demo with your real location, right-click your position in Google Maps
      and copy the coordinates.
-   - To demo without location permission, use Orlando West: `-26.2405`, `27.9055`.
-     (When location is off, the app searches near Orlando West.)
-   - The shop must be within 6 km of where the customer searches.
+   - The customer's phone must allow location, because the app needs it to find shops. There is no default area.
+   - The shop must be within 6 km of the customer.
 2. Go to `/admin/cash` and **Open rail**. The rail is labelled "Partner cash-out
    (pilot)" and the fee shows as an example, because no partner has confirmed a
    fee yet.
@@ -71,31 +70,31 @@ Sign out and back in. You should now reach `/admin`.
 
 As the **shop owner**, open `/operator/dashboard`. The **Cash desk** appears in
 daylight mode. Choose how much cash you can offer, tick small notes if you like,
-pick 1 hour, and **Go online**.
+pick 1 hour, and **Start taking requests**.
 
 ## 6. Run the flow as the customer
 
 As the **demo customer**, open `/cash`:
 
 1. Choose an amount. A new customer is capped at **R200**.
-2. **Find cash near me.** Allow location, or you'll see shops near Orlando West.
-3. Tap **Hold** on the demo shop. You'll see the 90-second countdown.
-4. As the shop owner, a **New request** appears with a sound (after you've
-   tapped the page once). **Accept**.
+2. **Find cash near me.** Allow location when the phone asks. If you decline, the app asks you to turn it on.
+3. Tap **Keep R… for me** on the demo shop. You'll see the 90-second countdown.
+4. As the shop owner, **Someone needs cash** appears with a sound (after you've
+   tapped the page once). Tap **Yes, I will keep … for them**.
 5. The customer now sees the 15-minute ring, the **two handshake words**, and
    the **6-digit code**. The shop sees the same two words.
 6. As the shop, type the customer's code and a made-up payment reference
    (letters and numbers, 4 to 24 characters, for example `DEMO1234`). Try a
-   wrong code first to see the attempt counter. **Cash handed over.**
+   wrong code first to see the attempt counter. **I gave the cash.**
 7. As the customer, check the masked reference and tap **Yes, I got my cash**.
 
-Also try: **Cancel**, a shop **Decline**, letting the 90 seconds run out, and
+Also try: **Cancel**, a shop tapping **No**, letting the 90 seconds run out, and
 **Report a problem** (a serious report pauses the shop; clear it from the shop's
 page in `/admin/operators`, and resolve the report in `/admin/cash`).
 
 ## 7. Close up
 
-1. As the shop owner, tap **Go offline**.
+1. As the shop owner, tap **Stop taking requests**.
 2. As you, in `/admin/cash`, **Close rail**.
 3. Optional cleanup, in the database tools:
 

@@ -83,7 +83,7 @@ describe("the public page makes no claim the product can't back", () => {
 
   test("it says plainly that cash requests are not open yet", () => {
     expect(page).toMatch(/Not open yet/);
-    expect(page).toMatch(/can't ask for cash on CashNear today/);
+    expect(page).toMatch(/cannot ask for cash on CashNear today/);
   });
 
   test("it names no payment partner or bank", () => {
@@ -100,7 +100,7 @@ describe("the public page makes no claim the product can't back", () => {
   test("every example screen is labelled as an example", () => {
     const captions = [...page.matchAll(/caption(?:=|:\s*)"([^"]+)"/g)].map((m) => m[1]);
     expect(captions.length).toBeGreaterThanOrEqual(6);
-    for (const c of captions) expect(c).toMatch(/^(An )?[Ee]xample/);
+    for (const c of captions) expect(c).toMatch(/not real|how it looks/i);
   });
 
   test("example screens are hidden from assistive tech so made-up data isn't read as real", () => {
@@ -123,9 +123,56 @@ describe("the public page makes no claim the product can't back", () => {
   });
 
   test("the privacy and cost claims match what the engine does", () => {
-    expect(page).toMatch(/CashNear charges nothing/);
-    expect(page).toMatch(/never holds your money/i);
+    expect(page).toMatch(/charges you nothing/);
+    expect(page).toMatch(/never keeps your money/i);
     expect(page).toMatch(/90 seconds/);
     expect(page).toMatch(/15 minutes/);
+  });
+});
+
+describe("the pages are plain, unmarked and say nothing about where we launch", () => {
+  const publicCopy = ["src/routes/index.tsx", "src/components/landing/ExampleScreens.tsx"];
+  const everyScreen = [
+    ...publicCopy,
+    "src/routes/_authenticated/cash.tsx",
+    "src/components/cash/ShopCashDesk.tsx",
+    "src/routes/_authenticated/customer.tsx",
+    "src/routes/_authenticated/operator.dashboard.tsx",
+    "src/lib/cash.ts",
+  ];
+
+  test("no place name appears anywhere a customer or shop can read it", () => {
+    for (const f of everyScreen)
+      expect(read(f)).not.toMatch(/Soweto|Orlando|Johannesburg|Alexandra|Tembisa/);
+  });
+
+  test("the app never quietly searches a default area when location is off", () => {
+    const page = read("src/routes/_authenticated/cash.tsx");
+    expect(page).not.toMatch(/PILOT_CENTER|usedFallback/);
+    expect(page).toMatch(/Turn on your phone's location/);
+  });
+
+  test("no step numbers, bullet dots, plus signs or decorative pills on the public page", () => {
+    const page = read("src/routes/index.tsx");
+    expect(page).not.toMatch(/padStart\(2/);
+    expect(page).not.toMatch(/>\s*0[1-9]\s*</);
+    expect(page).not.toMatch(/h-1\.5 w-1\.5 rounded-full/);
+    expect(page).not.toMatch(/>\s*\+\s*</);
+  });
+
+  test("the public copy avoids words an everyday reader would not use", () => {
+    // Only what a person reads: text between tags, and quoted sentences. Code
+    // names (imports, components, class names) are not copy.
+    const visibleText = (src: string) =>
+      [
+        ...[...src.matchAll(/>([^<>{}]{3,})</g)].map((m) => m[1]),
+        ...[...src.matchAll(/"([^"\n]{3,})"/g)]
+          .map((m) => m[1])
+          .filter((t) => /\s/.test(t) && !t.startsWith("@/")),
+      ].join(" ");
+    const jargon = /\bprovider\b|\bhandshake\b|\brail\b|\bheld\b|\bmechanism|\bpilot\b|\bonboard/i;
+    for (const f of publicCopy) {
+      expect(visibleText(read(f))).not.toMatch(jargon);
+    }
   });
 });

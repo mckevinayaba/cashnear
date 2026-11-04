@@ -251,7 +251,7 @@ function VerifiedHome() {
       <div>
         <Display className="text-[44px]">Need cash nearby?</Display>
         <Muted className="mt-3 max-w-[34ch]">
-          Cash requests are not open yet. We are checking shops in Johannesburg.
+          Cash requests are not open yet. We are checking shops first.
         </Muted>
       </div>
 

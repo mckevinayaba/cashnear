@@ -3,10 +3,10 @@ import { Handshake } from "@/components/cash/Handshake";
 import { HoldRing } from "@/components/cash/HoldRing";
 
 /**
- * Example screens for the public site. They are built from the same pieces as
- * the real app (ring, handshake words, type scale) so the page shows the real
- * flow. Every one is labelled as an example, and none uses a real person,
- * shop, code or fee schedule.
+ * Screens for the public site. They are built from the same pieces as the real
+ * app (ring, two words, type scale) so the page shows how it really looks.
+ * They contain no real or made-up person, shop, code or phone number: the
+ * private parts are blanked out, and each screen says it is not real.
  */
 
 export function PhoneFrame({
@@ -56,11 +56,8 @@ export function AskScreen() {
   return (
     <>
       <div>
-        <ScreenHeader right="Orlando West" />
-        <p className="mt-6 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          Get cash
-        </p>
-        <p className="mt-1 font-display text-[24px] leading-[1.1]">How much cash do you need?</p>
+        <ScreenHeader right="Get cash" />
+        <p className="mt-6 font-display text-[24px] leading-[1.1]">How much cash do you need?</p>
         <p className="mt-4 font-display text-[54px] leading-none tracking-tight">R200</p>
         <div className="mt-3 flex gap-2 text-[11px]">
           <span className="rounded-full border border-border-strong px-3 py-1.5 text-muted-foreground">
@@ -69,9 +66,10 @@ export function AskScreen() {
           <span className="rounded-full border border-gold px-3 py-1.5 text-gold">R200</span>
         </div>
         <div className="mt-5 rounded-2xl bg-surface-2/60 p-4 text-[12px] leading-relaxed">
-          You pay your provider's fee. CashNear charges <span className="text-gold">R0</span>.
+          Your bank or wallet charges its own fee. CashNear charges{" "}
+          <span className="text-gold">R0</span>.
           <span className="mt-1 block text-[11px] text-muted-foreground">
-            Your provider sets the final fee.
+            You see the fee before you ask.
           </span>
         </div>
       </div>
@@ -94,23 +92,25 @@ export function HeldScreen({ live = false }: { live?: boolean }) {
   return (
     <>
       <div>
-        <ScreenHeader right="Held for you" />
+        <ScreenHeader right="Kept for you" />
         <div className="mt-5 flex justify-center">
-          <HoldRing secondsLeft={left} totalSeconds={total} size={104} label="Example hold" />
+          <HoldRing secondsLeft={left} totalSeconds={total} size={104} label="Time left" />
         </div>
         <p className="mt-3 text-center text-[12px] text-muted-foreground">
-          R200 kept aside at an example shop
+          Your cash is kept for you at the shop
         </p>
         <div className="mt-5">
           <Handshake
-            words="Amber · River"
-            hint="Ask the shop to say these two words before you pay."
+            words="word · word"
+            hint="Ask the shop to say these two words. If they are the same, it is safe to pay."
           />
         </div>
       </div>
-      <div className="flex items-baseline justify-between rounded-2xl bg-surface-2/60 px-4 py-3">
-        <span className="text-[11px] text-muted-foreground">Code for the till</span>
-        <span className="font-mono text-[20px] tracking-[0.16em]">482951</span>
+      <div className="flex items-baseline justify-between gap-3 rounded-2xl bg-surface-2/60 px-4 py-3">
+        <span className="text-[11px] leading-snug text-muted-foreground">
+          Your code. Show it to the shop.
+        </span>
+        <span className="font-mono text-[18px] tracking-[0.18em]">••••••</span>
       </div>
     </>
   );
@@ -121,13 +121,16 @@ export function ConfirmScreen() {
     <>
       <div>
         <ScreenHeader right="Almost done" />
-        <p className="mt-7 font-display text-[26px] leading-[1.1]">Did you get your R200?</p>
-        <div className="mt-5 flex items-baseline justify-between rounded-2xl bg-surface-2/60 px-4 py-3">
-          <span className="text-[11px] text-muted-foreground">Reference on the shop's slip</span>
-          <span className="font-mono text-[14px]">••••7731</span>
+        <p className="mt-7 font-display text-[26px] leading-[1.1]">Did you get your cash?</p>
+        <div className="mt-5 flex items-baseline justify-between gap-3 rounded-2xl bg-surface-2/60 px-4 py-3">
+          <span className="text-[11px] leading-snug text-muted-foreground">
+            Number on the shop's slip
+          </span>
+          <span className="font-mono text-[14px]">••••••••</span>
         </div>
         <p className="mt-4 text-[12px] leading-relaxed text-muted-foreground">
-          Check it matches your provider's confirmation. Only confirm if you counted your cash.
+          Check that this number is also on your own payment message. Only press yes if you counted
+          your cash.
         </p>
       </div>
       <div className="flex flex-col gap-2">
@@ -144,17 +147,17 @@ export function ShopAcceptScreen() {
       <div>
         <ScreenHeader right="Your shop" />
         <p className="mt-6 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          New request
+          Someone needs cash
         </p>
         <p className="mt-1 font-display text-[50px] leading-none tracking-tight">R200</p>
-        <p className="mt-2 text-[12px] text-muted-foreground">Ayanda · Under 500 m away</p>
+        <p className="mt-2 text-[12px] text-muted-foreground">A customer · Under 500 m away</p>
         <div className="mt-5 flex justify-center">
-          <HoldRing secondsLeft={61} totalSeconds={90} size={92} label="Example time to accept" />
+          <HoldRing secondsLeft={61} totalSeconds={90} size={92} label="Time to answer" />
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        <FauxButton>Accept and keep R200 aside</FauxButton>
-        <p className="text-center text-[12px] text-muted-foreground">Decline</p>
+        <FauxButton>Yes, I will keep R200 for them</FauxButton>
+        <p className="text-center text-[12px] text-muted-foreground">No</p>
       </div>
     </>
   );

@@ -191,9 +191,8 @@ function OperatorDashboard() {
               <div>
                 <Eyebrow>What happens next</Eyebrow>
                 <Body className="mt-1 text-[14px] text-muted-foreground">
-                  We're onboarding the first group of CashNear businesses in Johannesburg. We'll
-                  contact you using the details on your application before customer requests open
-                  for your business.
+                  We are getting the first group of CashNear shops ready. We'll contact you using
+                  the details on your application before customer requests open for your business.
                 </Body>
               </div>
               <div>

@@ -74,9 +74,6 @@ export type TransitionResult =
 /** The pilot rail. Exactly one rail is offered in the pilot. */
 export const PILOT_RAIL = "gotyme_flash";
 
-/** Orlando West, Soweto: where the pilot runs and the fallback when location is off. */
-export const PILOT_CENTER = { lat: -26.2405, lng: 27.9055, label: "Orlando West" } as const;
-
 export const AMOUNT_CHOICES_CENTS = [10000, 20000, 30000, 40000, 50000] as const;
 
 /** 12 500 cents -> "R125"; 750 cents -> "R7.50". Spaces as thousands separator (en-ZA style). */
@@ -118,27 +115,28 @@ export function distanceLabel(meters: number | null): string {
 
 const MESSAGES: Record<string, string> = {
   not_authenticated: "Sign in to continue.",
-  rail_unavailable: "Cash holds aren't open yet. We'll tell you when they are.",
+  rail_unavailable: "This is not open yet. We will tell you when it is.",
   amount_not_supported: "That amount isn't available.",
   amount_not_allowed: "That amount isn't available to you yet.",
-  shop_cannot_serve: "That shop can't serve this amount right now. Pick another shop.",
-  shop_unavailable: "That shop isn't taking requests right now.",
-  already_active: "You already have a cash hold in progress.",
-  paused_no_shows: "New requests are paused for a few days after missed collections.",
-  own_shop: "You can't request cash from your own shop.",
-  invalid_state: "This request has already changed. Refresh and try again.",
+  shop_cannot_serve: "That shop cannot give you this amount right now. Pick another shop.",
+  shop_unavailable: "That shop is not taking requests right now.",
+  already_active: "You already have a request going.",
+  paused_no_shows:
+    "You cannot ask for cash for a few days, because earlier cash was not collected.",
+  own_shop: "You cannot ask for cash from your own shop.",
+  invalid_state: "This request has changed. Refresh the page and try again.",
   invalid_idempotency_key: "Something went wrong. Please try again.",
   invalid_location: "We couldn't read your location.",
-  shop_paused: "Your shop is paused, so it can't accept requests.",
-  not_found: "We couldn't find that request.",
-  not_enrolled: "Your shop isn't set up for cash holds yet. Contact CashNear.",
-  paused_for_review: "Your shop is paused while we review a report. We'll be in touch.",
+  shop_paused: "Your shop is stopped for now, so it cannot say yes to requests.",
+  not_found: "We could not find that request.",
+  not_enrolled: "Your shop is not ready to give out cash through CashNear yet. Contact CashNear.",
+  paused_for_review: "Your shop is stopped while we look into a report. We will contact you.",
   invalid_reference:
-    "Enter the reference from your provider slip: letters and numbers, 4 to 24 characters.",
-  invalid_band: "Choose a cash amount between R100 and the pilot limit.",
-  invalid_duration: "Choose how long you'll be online.",
-  forbidden: "You don't have access to do that.",
-  reason_required: "Add a reason of at least 10 characters.",
+    "Type the number from the payment slip. Use letters and numbers only, 4 to 24 long.",
+  invalid_band: "Choose an amount between R100 and the most you are allowed.",
+  invalid_duration: "Choose how long you will take requests.",
+  forbidden: "You are not allowed to do that.",
+  reason_required: "Write a reason, at least 10 letters long.",
   location_required: "Add the shop's location first.",
   business_not_approved: "Only approved businesses can be enrolled.",
   unknown_action: "Something went wrong. Please try again.",
@@ -154,21 +152,21 @@ export function describeCashError(message: string | null | undefined): string {
 /** Plain-language outcome for a request that ended without cash changing hands. */
 export function describeClosedReason(reason: string | null): string {
   if (!reason) return "This request has ended.";
-  if (reason === "shop_no_response") return "The shop didn't respond in time. Nothing was charged.";
-  if (reason === "hold_window_passed") return "Your hold ran out. You can ask again.";
+  if (reason === "shop_no_response") return "The shop did not answer in time. Nothing was charged.";
+  if (reason === "hold_window_passed") return "Your time ran out. You can ask again.";
   if (reason === "customer_cancelled") return "You cancelled this request.";
   if (reason.startsWith("shop_declined"))
-    return "The shop couldn't serve this one. Nothing was charged.";
+    return "The shop could not give you this cash. Nothing was charged.";
   if (reason.startsWith("dispute_"))
-    return "You reported a problem. A person on the CashNear team will review it.";
+    return "You told us about a problem. A real person at CashNear will look into it.";
   if (reason === "customer_did_not_confirm")
-    return "We're checking this one with you and the shop.";
+    return "We are checking this one with you and the shop.";
   return "This request has ended.";
 }
 
 export const DISPUTE_KINDS = [
   { id: "paid_no_cash", label: "I paid but didn't get cash" },
-  { id: "fee_changed", label: "The shop asked for a higher fee" },
+  { id: "fee_changed", label: "The shop asked me for more money" },
   { id: "wrong_amount", label: "I got the wrong amount" },
   { id: "shop_closed", label: "The shop was closed or had no cash" },
   { id: "threat", label: "I felt unsafe" },

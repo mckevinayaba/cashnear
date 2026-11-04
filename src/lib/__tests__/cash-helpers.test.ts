@@ -80,8 +80,8 @@ describe("what customers and shops are shown", () => {
 describe("errors are plain language and never leak internals", () => {
   test("known engine errors map to readable sentences", () => {
     expect(describeCashError("shop_cannot_serve")).toMatch(/Pick another shop/);
-    expect(describeCashError("already_active")).toMatch(/already have a cash hold/);
-    expect(describeCashError("paused_for_review")).toMatch(/review/);
+    expect(describeCashError("already_active")).toMatch(/already have a request/);
+    expect(describeCashError("paused_for_review")).toMatch(/report/);
   });
 
   test("the rate-limit message passes through unchanged", () => {

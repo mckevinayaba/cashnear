@@ -30,7 +30,8 @@ describe("operator.dashboard.tsx post-approval experience", () => {
 
   test("explains what happens next and how CashNear will make contact", () => {
     expect(src).toMatch(/What happens next/);
-    expect(src).toMatch(/contact you using the details on your application/);
+    // Tolerant of line wraps in the JSX source.
+    expect(src).toMatch(/contact you using\s+the details on your application/);
   });
 
   test("gives a support contact for questions or updating details on file", () => {

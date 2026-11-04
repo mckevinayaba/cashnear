@@ -11,16 +11,16 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CashNear — Cash, kept aside for you." },
+      { title: "CashNear — Get cash from a shop near you." },
       {
         name: "description",
         content:
-          "See which checked shops nearby can serve you, know the fee before you walk, and have the shop keep your cash aside. Starting in Orlando West, Soweto. Not open yet.",
+          "Tell us how much cash you need. A shop near you says yes and keeps your cash for you. You see the fee before you go. Not open yet.",
       },
-      { property: "og:title", content: "CashNear — Cash, kept aside for you." },
+      { property: "og:title", content: "CashNear — Get cash from a shop near you." },
       {
         property: "og:description",
-        content: "Checked shops nearby, the fee up front, your cash kept aside. Not open yet.",
+        content: "Get cash from a shop near you. You see the fee before you go. Not open yet.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -192,7 +192,7 @@ function SiteHeader({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () 
             How it works
           </a>
           <a href="#safety" className="hover:text-foreground">
-            Why it is safe
+            Why you can trust it
           </a>
           <a href="#operators" className="hover:text-foreground">
             For shops
@@ -246,16 +246,13 @@ function Hero({ signedIn }: { signedIn: boolean }) {
     <section className="border-b border-border">
       <Container className="grid items-center gap-14 py-16 lg:grid-cols-[1.1fr_1fr] lg:py-24">
         <div className="animate-rise">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border-strong px-3.5 py-1.5 text-[12px] text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-            Starting in Orlando West, Soweto · Not open yet
-          </span>
-          <h1 className="mt-7 font-display text-[54px] leading-[0.98] tracking-tight text-foreground md:text-[78px]">
-            Cash, kept aside for you.
+          <p className="text-[14px] text-gold">Not open yet. Sign up and we will tell you.</p>
+          <h1 className="mt-5 font-display text-[54px] leading-[0.98] tracking-tight text-foreground md:text-[78px]">
+            Get cash from a shop near you.
           </h1>
-          <p className="mt-6 max-w-[48ch] text-[17px] leading-relaxed text-muted-foreground">
-            See which checked shops nearby can serve you. Know the fee before you walk. The shop
-            keeps your cash aside until you arrive.
+          <p className="mt-6 max-w-[46ch] text-[18px] leading-relaxed text-muted-foreground">
+            Tell us how much you need. A shop near you says yes and keeps your cash for you. You see
+            the fee before you go.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -274,12 +271,12 @@ function Hero({ signedIn }: { signedIn: boolean }) {
               </>
             )}
           </div>
-          <p className="mt-6 max-w-[52ch] text-[13px] leading-relaxed text-muted-foreground">
-            CashNear never holds your money. You pay the shop on its own payment device.
+          <p className="mt-6 max-w-[48ch] text-[14px] leading-relaxed text-muted-foreground">
+            CashNear never keeps your money. You pay the shop on their payment machine.
           </p>
         </div>
 
-        <PhoneFrame caption="An example screen. Not a real request, shop or code.">
+        <PhoneFrame caption="This is how the screen looks. The numbers on it are not real.">
           <HeldScreen live />
         </PhoneFrame>
       </Container>
@@ -292,49 +289,49 @@ function Hero({ signedIn }: { signedIn: boolean }) {
 function Flow() {
   const steps = [
     {
-      n: "01",
-      title: "Ask",
-      body: "Say how much you need. You see your provider's fee before anything happens.",
+      label: "First",
+      title: "You ask",
+      body: "Say how much cash you need. You see the fee before anything happens.",
       screen: <AskScreen />,
-      caption: "Example: asking for R200",
+      caption: "How it looks when you ask",
     },
     {
-      n: "02",
-      title: "The shop confirms",
-      body: "A checked shop has 90 seconds to say yes. If it doesn't, nothing happens and nothing is charged.",
+      label: "Then",
+      title: "The shop says yes",
+      body: "A shop we have checked has 90 seconds to say yes. If it says no, nothing happens and you pay nothing.",
       screen: <ShopAcceptScreen />,
-      caption: "Example: what the shop sees",
+      caption: "How it looks to the shop",
       daylight: true,
     },
     {
-      n: "03",
-      title: "Walk over",
-      body: "The shop keeps your cash aside for 15 minutes. Say the two words and show your code at the till.",
+      label: "Then",
+      title: "You walk over",
+      body: "The shop keeps your cash for you for 15 minutes. Show your code at the shop and say the two words.",
       screen: <HeldScreen />,
-      caption: "Example: your cash is held",
+      caption: "How it looks while your cash is kept",
     },
     {
-      n: "04",
-      title: "Count it, confirm it",
-      body: "The shop enters the reference from its payment slip. You confirm you got your cash.",
+      label: "Last",
+      title: "You count your cash",
+      body: "The shop types the number from its payment slip. You say you got your cash.",
       screen: <ConfirmScreen />,
-      caption: "Example: both sides confirm",
+      caption: "How it looks at the end",
     },
   ];
   return (
     <section id="how" className="scroll-mt-16 border-b border-border">
       <Container className="py-16 lg:py-24">
         <SectionEyebrow>How it works</SectionEyebrow>
-        <SectionTitle>Four steps. No wasted trip.</SectionTitle>
+        <SectionTitle>Four easy steps.</SectionTitle>
       </Container>
       <div className="flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-4 lg:justify-center lg:gap-8 lg:px-10">
         {steps.map((s) => (
-          <div key={s.n} className="flex w-[264px] shrink-0 snap-center flex-col lg:w-[270px]">
-            <div className="mb-5 flex items-baseline gap-3">
-              <span className="font-mono text-[12px] text-gold">{s.n}</span>
-              <h3 className="font-display text-[26px] leading-none text-foreground">{s.title}</h3>
-            </div>
-            <p className="mb-6 min-h-[84px] text-[14px] leading-relaxed text-muted-foreground">
+          <div key={s.title} className="flex w-[264px] shrink-0 snap-center flex-col lg:w-[270px]">
+            <p className="text-[13px] text-gold">{s.label}</p>
+            <h3 className="mt-1 font-display text-[28px] leading-none text-foreground">
+              {s.title}
+            </h3>
+            <p className="mb-6 mt-3 min-h-[96px] text-[15px] leading-relaxed text-muted-foreground">
               {s.body}
             </p>
             <PhoneFrame caption={s.caption} daylight={s.daylight}>
@@ -344,8 +341,8 @@ function Flow() {
         ))}
       </div>
       <Container className="pb-16 pt-8 lg:pb-24">
-        <p className="text-[13px] text-muted-foreground">
-          These are example screens built from the real app. They use made-up people and numbers.
+        <p className="text-[14px] text-muted-foreground">
+          These screens show how the app looks. The names and numbers on them are not real.
         </p>
       </Container>
     </section>
@@ -358,51 +355,46 @@ function Trust() {
   const items: [string, string][] = [
     [
       "We check every shop first.",
-      "A person reviews the business, its documents and its card machine before it can help anyone.",
+      "A real person checks the shop and its papers before it can help anyone.",
     ],
     [
-      "Two words, said out loud.",
-      "You and the shop both see the same two words. Saying them confirms you're meeting the right person before any money moves.",
+      "Two words keep you safe.",
+      "You and the shop see the same two words. Say them out loud. If they are the same, you are with the right person.",
     ],
     [
-      "Your cash is kept aside.",
-      'The shop reserves the amount for you for 15 minutes, so you don\'t walk over to "no cash today".',
+      "Your cash is kept for you.",
+      "The shop keeps your cash for 15 minutes. You will not walk over and find no cash.",
     ],
     [
-      "You pay the shop directly.",
-      "CashNear never holds or moves your money. The payment happens on the shop's own payment device.",
+      "You pay the shop, not us.",
+      "CashNear never keeps your money. You pay the shop on their payment machine.",
     ],
     [
-      "Both sides confirm.",
-      "The shop enters the reference from its slip. You confirm you counted your cash. If something doesn't match, you can report it and a person reviews it.",
+      "You both say it is done.",
+      "The shop types the number from the slip. You say you got your cash. If something is wrong, tell us and a real person will look into it.",
     ],
     [
-      "The shop never sees where you are.",
-      "Shops see your first name and roughly how far away you are. Nothing else.",
+      "The shop does not know where you are.",
+      "The shop only sees your first name and about how far away you are.",
     ],
   ];
   return (
     <section id="safety" className="scroll-mt-16 border-b border-border">
       <Container className="grid gap-12 py-16 lg:grid-cols-[1fr_1.4fr] lg:py-24">
         <div>
-          <SectionEyebrow>Why it is safe</SectionEyebrow>
-          <SectionTitle>Built so you don't have to trust a stranger.</SectionTitle>
+          <SectionEyebrow>Why you can trust it</SectionEyebrow>
+          <SectionTitle>Safe for you. Safe for the shop.</SectionTitle>
         </div>
-        <ol className="flex flex-col divide-y divide-border border-y border-border">
-          {items.map(([title, body], i) => (
-            <li key={title} className="grid grid-cols-[2.5rem_1fr] gap-4 py-6">
-              <span className="pt-1 font-mono text-[12px] text-gold">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div>
-                <h3 className="font-display text-[22px] leading-tight text-foreground">{title}</h3>
-                <p className="mt-2 max-w-[56ch] text-[14px] leading-relaxed text-muted-foreground">
-                  {body}
-                </p>
-              </div>
-            </li>
+        <div className="flex flex-col divide-y divide-border border-y border-border">
+          {items.map(([title, body]) => (
+            <div key={title} className="py-6">
+              <h3 className="font-display text-[24px] leading-tight text-foreground">{title}</h3>
+              <p className="mt-2 max-w-[56ch] text-[15px] leading-relaxed text-muted-foreground">
+                {body}
+              </p>
+            </div>
           ))}
-        </ol>
+        </div>
       </Container>
     </section>
   );
@@ -412,37 +404,36 @@ function Trust() {
 
 function ForShops() {
   const items = [
-    "You choose when you're online, and how much cash you're willing to offer.",
-    "You see the amount before you accept. No surprises at the till.",
-    "Customers never see how much cash you hold. They only see whether you can serve them.",
-    "A bright, high-contrast screen made for a busy counter in daylight.",
-    "Free to join. CashNear charges shops nothing in the pilot.",
+    "You choose when you take requests, and how much cash you can give out.",
+    "You see how much cash they want before you say yes.",
+    "Customers never see how much cash you have. They only see if you can help.",
+    "The screen is bright and easy to read in daylight.",
+    "It is free to join. CashNear charges shops nothing for now.",
   ];
   return (
     <section id="operators" className="scroll-mt-16 border-b border-border">
       <Container className="grid items-center gap-14 py-16 lg:grid-cols-2 lg:py-24">
         <div>
           <SectionEyebrow>For shops</SectionEyebrow>
-          <SectionTitle>Do you run a shop? Help your neighbours get cash.</SectionTitle>
-          <ul className="mt-8 flex flex-col divide-y divide-border border-y border-border">
+          <SectionTitle>Do you have a shop? Help people near you get cash.</SectionTitle>
+          <div className="mt-8 flex flex-col divide-y divide-border border-y border-border">
             {items.map((it) => (
-              <li key={it} className="flex items-start gap-4 py-4">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
-                <span className="text-[15px] leading-relaxed text-foreground">{it}</span>
-              </li>
+              <p key={it} className="py-4 text-[16px] leading-relaxed text-foreground">
+                {it}
+              </p>
             ))}
-          </ul>
-          <p className="mt-6 max-w-[52ch] text-[14px] leading-relaxed text-muted-foreground">
-            Register now. We check your documents and payment device, and a person visits before
-            your shop goes live. Customers pay on your own payment device.
+          </div>
+          <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-muted-foreground">
+            Sign up now. We check your papers and your payment machine, and a real person visits
+            your shop before you start. Customers pay you on your own payment machine.
           </p>
           <div className="mt-8">
             <PrimaryBtn to="/auth" size="lg">
-              Register my shop
+              Sign up my shop
             </PrimaryBtn>
           </div>
         </div>
-        <PhoneFrame caption="An example of what a shop sees, in daylight mode." daylight>
+        <PhoneFrame caption="How it looks to the shop, in daylight." daylight>
           <ShopAcceptScreen />
         </PhoneFrame>
       </Container>
@@ -453,54 +444,17 @@ function ForShops() {
 /* ---------------- Where we are ---------------- */
 
 function Status({ signedIn }: { signedIn: boolean }) {
-  const stages = [
-    {
-      label: "Now",
-      title: "Checking shops in Orlando West",
-      body: "We're checking and approving the first shops, one by one.",
-      active: true,
-    },
-    {
-      label: "Next",
-      title: "A small private pilot",
-      body: "A handful of checked shops and the first customers, with low limits.",
-      active: false,
-    },
-    {
-      label: "Then",
-      title: "More shops, more places",
-      body: "Only once the pilot shows it works and is safe.",
-      active: false,
-    },
-  ];
   return (
     <section id="status" className="scroll-mt-16 border-b border-border">
       <Container className="py-16 lg:py-24">
         <SectionEyebrow>Where we are</SectionEyebrow>
-        <SectionTitle>Small on purpose. Not open yet.</SectionTitle>
-        <p className="mt-4 max-w-[56ch] text-[15px] leading-relaxed text-muted-foreground">
-          You can't ask for cash on CashNear today. We'd rather open slowly and get it right.
+        <SectionTitle>We are not open yet.</SectionTitle>
+        <p className="mt-5 max-w-[52ch] text-[17px] leading-relaxed text-muted-foreground">
+          You cannot ask for cash on CashNear today. We are checking shops first, because we want it
+          to be safe. Sign up and we will tell you when it opens.
         </p>
-        <ol className="mt-10 grid gap-8 md:grid-cols-3">
-          {stages.map((s) => (
-            <li
-              key={s.label}
-              className={`border-t pt-5 ${s.active ? "border-gold" : "border-border-strong"}`}
-            >
-              <span
-                className={`text-[11px] uppercase tracking-[0.22em] ${s.active ? "text-gold" : "text-muted-foreground"}`}
-              >
-                {s.label}
-              </span>
-              <h3 className="mt-3 font-display text-[24px] leading-tight text-foreground">
-                {s.title}
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{s.body}</p>
-            </li>
-          ))}
-        </ol>
         {!signedIn ? (
-          <div className="mt-10">
+          <div className="mt-8">
             <PrimaryBtn to="/auth" size="lg">
               Tell me when it opens
             </PrimaryBtn>
@@ -517,44 +471,45 @@ function Faq() {
   const faqs: [string, string][] = [
     [
       "Can I get cash through CashNear now?",
-      "Not yet. We're checking and approving the first shops in Orlando West, Soweto. Create an account and we'll tell you when it opens.",
+      "Not yet. We are checking shops first. Sign up and we will tell you when it opens.",
     ],
     [
-      "What does it cost?",
-      "During the pilot CashNear charges nothing. You pay your provider's normal fee, and you see it before you ask.",
+      "How much does it cost?",
+      "CashNear charges you nothing. Your bank or wallet charges its own fee. You see the fee before you ask.",
     ],
     [
-      "Do I need to upload my ID?",
-      "CashNear doesn't ask for an ID document to request cash in the pilot. New customers start with a low limit that rises as they collect cash without problems.",
+      "Do I need to show my ID?",
+      "CashNear does not ask you for an ID to ask for cash. At the start you can ask for a small amount. You can ask for more after you collect cash with no problems.",
     ],
     [
-      "Does CashNear hold my money?",
-      "No. You pay the shop on its own payment device. CashNear only helps you find the shop and keeps track of the request.",
+      "Does CashNear keep my money?",
+      "No. You pay the shop on their payment machine. CashNear only helps you find the shop.",
     ],
     [
-      "What if the shop doesn't have my cash?",
-      "Shops confirm before you walk. If a shop doesn't confirm in time, nothing happens and you can pick another. If something goes wrong at the till, report it in the app and a person reviews it.",
+      "What if the shop does not have my cash?",
+      "The shop says yes before you walk. If it does not say yes, nothing happens and you can pick another shop. If something goes wrong at the shop, tell us in the app. A real person will look into it.",
     ],
     [
       "Can any shop join?",
-      "No. We check the business, its documents and its payment device before approval, and we can pause a shop if something is reported.",
+      "No. We check each shop and its papers first. We can stop a shop from taking requests if someone reports a problem.",
     ],
   ];
   return (
     <section id="faq" className="scroll-mt-16 border-b border-border">
       <Container className="py-16 lg:py-24">
-        <SectionEyebrow>FAQ</SectionEyebrow>
-        <SectionTitle>Common questions.</SectionTitle>
+        <SectionEyebrow>Questions</SectionEyebrow>
+        <SectionTitle>Questions people ask.</SectionTitle>
         <div className="mt-12 divide-y divide-border border-y border-border">
           {faqs.map(([q, a]) => (
             <details key={q} className="group py-6">
-              <summary className="flex cursor-pointer items-center justify-between gap-6 text-[16px] text-foreground">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[17px] text-foreground [&::-webkit-details-marker]:hidden">
                 {q}
-                <span className="text-muted-foreground transition-transform group-open:rotate-45">
-                  +
+                <span className="shrink-0 text-[13px] text-muted-foreground">
+                  <span className="group-open:hidden">Read</span>
+                  <span className="hidden group-open:inline">Close</span>
                 </span>
               </summary>
-              <p className="mt-4 max-w-[70ch] text-[14px] leading-relaxed text-muted-foreground">
+              <p className="mt-4 max-w-[70ch] text-[15px] leading-relaxed text-muted-foreground">
                 {a}
               </p>
             </details>
@@ -574,7 +529,7 @@ function SiteFooter() {
         <div className="md:col-span-2">
           <Wordmark />
           <p className="mt-4 max-w-[40ch] text-[13px] leading-relaxed text-muted-foreground">
-            Cash, kept aside for you. Starting in Orlando West, Soweto. Not open yet.
+            Get cash from a shop near you. Not open yet.
           </p>
         </div>
         <FooterCol
@@ -582,7 +537,7 @@ function SiteFooter() {
           links={[
             ["Sign in", "/auth"],
             ["Register my business", "/auth"],
-            ["Why it is safe", "#safety"],
+            ["Why you can trust it", "#safety"],
             ["FAQ", "#faq"],
           ]}
         />

@@ -24,7 +24,7 @@ export function CashPointPanel({
   const [loaded, setLoaded] = useState(false);
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
-  const [area, setArea] = useState("Orlando West");
+  const [area, setArea] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

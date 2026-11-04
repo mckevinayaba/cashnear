@@ -26,7 +26,6 @@ import {
 import {
   AMOUNT_CHOICES_CENTS,
   DISPUTE_KINDS,
-  PILOT_CENTER,
   PILOT_RAIL,
   describeClosedReason,
   formatRand,
@@ -47,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/cash")({
 type Phase =
   | { name: "loading" }
   | { name: "ask" }
-  | { name: "shops"; shops: NearbyShop[]; amount: number; small: boolean; usedFallback: boolean }
+  | { name: "shops"; shops: NearbyShop[]; amount: number; small: boolean }
   | { name: "request"; id: string };
 
 function CashPage() {
@@ -73,9 +72,6 @@ function CashPage() {
           <Link to="/customer" className="font-display text-[22px] tracking-tight">
             CashNear
           </Link>
-          <span className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground">
-            {PILOT_CENTER.label}
-          </span>
         </header>
 
         {phase.name === "loading" ? <Muted>Loading…</Muted> : null}
@@ -143,12 +139,7 @@ function Switch({
 function AskView({
   onShops,
 }: {
-  onShops: (p: {
-    shops: NearbyShop[];
-    amount: number;
-    small: boolean;
-    usedFallback: boolean;
-  }) => void;
+  onShops: (p: { shops: NearbyShop[]; amount: number; small: boolean }) => void;
 }) {
   const [amount, setAmount] = useState<number>(20000);
   const [small, setSmall] = useState(false);
@@ -182,7 +173,11 @@ function AskView({
     setError(null);
     try {
       const pos = await getPosition();
-      const origin = pos ?? PILOT_CENTER;
+      if (!pos) {
+        setError("Turn on your phone's location so we can find shops near you. Then try again.");
+        return;
+      }
+      const origin = pos;
       const shops = await cashNearby({
         lat: origin.lat,
         lng: origin.lng,
@@ -190,7 +185,7 @@ function AskView({
         rail: PILOT_RAIL,
         smallNotes: small,
       });
-      onShops({ shops, amount, small, usedFallback: !pos });
+      onShops({ shops, amount, small });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -204,10 +199,9 @@ function AskView({
     return (
       <div className="flex flex-col gap-4">
         <Eyebrow>Get cash</Eyebrow>
-        <Display className="text-[40px]">Cash holds open soon.</Display>
+        <Display className="text-[40px]">Not open yet.</Display>
         <Body className="text-muted-foreground">
-          We're setting up the first shops in {PILOT_CENTER.label}. We'll tell you the moment you
-          can ask for cash.
+          We are getting the first shops ready. We will tell you when you can ask for cash.
         </Body>
       </div>
     );
@@ -249,31 +243,31 @@ function AskView({
         </div>
         {quote && quote.max_cents < 50000 ? (
           <Muted className="mt-3 text-[13px]">
-            Your limit starts at {formatRand(quote.max_cents)}. It rises as you collect cash without
-            problems.
+            You can ask for up to {formatRand(quote.max_cents)} for now. Each time you collect cash
+            with no problems, you can ask for more.
           </Muted>
         ) : null}
       </div>
 
       <Card variant="quiet">
         <CardBody className="flex flex-col gap-2">
-          <Eyebrow>Pay with</Eyebrow>
-          <p className="text-[16px]">{quote?.rail_label ?? "Your bank or wallet"}</p>
+          <Eyebrow>The fee</Eyebrow>
+
           {quote ? (
             <>
               <p className="text-[15px] leading-relaxed" data-testid="fee-line">
-                You pay <span className="text-gold">{formatRand(quote.partner_fee_cents)}</span> to
-                your provider. CashNear charges{" "}
-                <span className="text-gold">{formatRand(quote.cashnear_fee_cents)}</span>.
+                Your bank or wallet charges{" "}
+                <span className="text-gold">{formatRand(quote.partner_fee_cents)}</span>. CashNear
+                charges <span className="text-gold">{formatRand(quote.cashnear_fee_cents)}</span>.
               </p>
               {!quote.fee_verified ? (
                 <Muted className="text-[13px]">
-                  Example fee. Your provider sets the final fee.
+                  This fee is an example. Your bank or wallet sets the real fee.
                 </Muted>
               ) : null}
             </>
           ) : (
-            <Muted>Checking the fee…</Muted>
+            <Muted>Looking at the fee…</Muted>
           )}
         </CardBody>
       </Card>
@@ -282,10 +276,10 @@ function AskView({
 
       <ErrorLine message={error} />
       <Button size="lg" fullWidth disabled={busy || !quote} onClick={find}>
-        {busy ? "Finding shops…" : "Find cash near me"}
+        {busy ? "Looking…" : "Find cash near me"}
       </Button>
       <Muted className="text-[13px]">
-        CashNear never holds your money. You pay the shop on their own payment device.
+        CashNear never keeps your money. You pay the shop on their payment machine.
       </Muted>
     </div>
   );
@@ -295,14 +289,12 @@ function ShopsView({
   shops,
   amount,
   small,
-  usedFallback,
   onBack,
   onRequested,
 }: {
   shops: NearbyShop[];
   amount: number;
   small: boolean;
-  usedFallback: boolean;
   onBack: () => void;
   onRequested: (id: string) => void;
 }) {
@@ -348,14 +340,9 @@ function ShopsView({
         <Eyebrow>{formatRand(amount)}</Eyebrow>
         <Display className="mt-2 text-[34px] leading-[1.1]">
           {available.length > 0
-            ? `${available.length} ${available.length === 1 ? "shop" : "shops"} can serve you.`
-            : "No shop can serve you right now."}
+            ? `${available.length} ${available.length === 1 ? "shop has" : "shops have"} your cash.`
+            : "No shop has your cash right now."}
         </Display>
-        {usedFallback ? (
-          <Muted className="mt-2 text-[13px]">
-            Location is off, so we're showing shops near {PILOT_CENTER.label}.
-          </Muted>
-        ) : null}
       </div>
 
       <ErrorLine message={error} />
@@ -377,12 +364,12 @@ function ShopsView({
                       s.can_serve ? "text-success" : "text-muted-foreground",
                     )}
                   >
-                    {s.can_serve ? "Available" : "Not right now"}
+                    {s.can_serve ? "Has your cash" : "Not now"}
                   </p>
                 </div>
                 {s.can_serve ? (
                   <Button size="md" disabled={busyId !== null} onClick={() => hold(s)}>
-                    {busyId === s.business_id ? "Asking…" : `Hold ${formatRand(amount)}`}
+                    {busyId === s.business_id ? "Asking…" : `Keep ${formatRand(amount)} for me`}
                   </Button>
                 ) : null}
               </CardBody>
@@ -391,8 +378,8 @@ function ShopsView({
         ))}
       </ul>
       <Muted className="text-[13px]">
-        The shop has 90 seconds to confirm. If it doesn't, nothing is charged and you can pick
-        another.
+        The shop has 90 seconds to say yes. If it says no, or does not answer, nothing happens. You
+        can pick another shop.
       </Muted>
     </div>
   );
@@ -490,14 +477,14 @@ function RequestView({ id, onDone }: { id: string; onDone: () => void }) {
         </div>
         <Card variant="quiet">
           <CardBody className="flex items-baseline justify-between gap-4">
-            <span className="text-[13px] text-muted-foreground">Reference on the shop's slip</span>
+            <span className="text-[13px] text-muted-foreground">Number on the shop's slip</span>
             <span className="font-mono text-[16px] tracking-wide">
               {req.reference_masked ?? "—"}
             </span>
           </CardBody>
         </Card>
         <Body className="text-[14px] text-muted-foreground">
-          Check that it matches the confirmation from your provider. Only confirm if you counted
+          Check that this number is also on your own payment message. Only press yes if you counted
           your cash.
         </Body>
         <ErrorLine message={error} />
@@ -529,7 +516,7 @@ function RequestView({ id, onDone }: { id: string; onDone: () => void }) {
           You collected {formatRand(req.amount_cents)}.
         </Display>
         <Body className="text-muted-foreground">
-          Thanks for confirming. Your limit grows with every clean collection.
+          Thank you. Each time you collect cash with no problems, you can ask for more.
         </Body>
         <Button size="lg" fullWidth onClick={onDone}>
           Done
@@ -570,13 +557,13 @@ function WaitingView({
     <div className="flex flex-col items-center gap-6 text-center">
       <Eyebrow>Asking {shopName}</Eyebrow>
       <HoldRing secondsLeft={left} totalSeconds={total} label="Time for the shop to confirm" />
-      <Display className="text-[32px] leading-[1.1]">Waiting for the shop to confirm.</Display>
+      <Display className="text-[32px] leading-[1.1]">Waiting for the shop to say yes.</Display>
       <Body className="max-w-[32ch] text-[14px] text-muted-foreground">
-        They're being asked to keep {formatRand(req.amount_cents)} aside. Nothing is charged.
+        We asked them to keep {formatRand(req.amount_cents)} for you. You have not paid anything.
       </Body>
       <ErrorLine message={error} />
       <Button variant="ghost" disabled={busy} onClick={onCancel}>
-        Cancel request
+        Cancel
       </Button>
     </div>
   );
@@ -624,7 +611,7 @@ function HeldView({
           label="Time left on your hold"
         />
         <div className="min-w-0">
-          <Eyebrow>Held for you</Eyebrow>
+          <Eyebrow>Kept for you</Eyebrow>
           <p className="mt-1 font-display text-[26px] leading-tight">
             {formatRand(req.amount_cents)}
           </p>
@@ -655,13 +642,13 @@ function HeldView({
       {req.handshake ? (
         <Handshake
           words={req.handshake}
-          hint="Ask the shop to say these two words before you pay."
+          hint="Ask the shop to say these two words. If they are the same, it is safe to pay."
         />
       ) : null}
 
       <Card variant="lift">
         <CardBody className="flex items-baseline justify-between gap-4">
-          <span className="text-[13px] text-muted-foreground">Code for the till</span>
+          <span className="text-[13px] text-muted-foreground">Your code. Show it to the shop.</span>
           <span className="font-mono text-[28px] tracking-[0.18em]" data-testid="code">
             {req.code ?? "——————"}
           </span>
@@ -669,8 +656,8 @@ function HeldView({
       </Card>
 
       <Body className="text-[14px] text-muted-foreground">
-        Pay on the shop's own payment device. Count your cash before you leave. CashNear never
-        touches the money.
+        Pay the shop on their payment machine. Count your cash before you leave. CashNear never
+        touches your money.
       </Body>
 
       <ErrorLine message={error} />
@@ -679,7 +666,7 @@ function HeldView({
       ) : (
         <div className="flex flex-col gap-1">
           <Button variant="ghost" disabled={busy} onClick={onCancel}>
-            Cancel hold
+            Cancel
           </Button>
           <Button variant="ghost" onClick={onReport}>
             Report a problem

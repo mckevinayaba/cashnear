@@ -82,10 +82,10 @@ export function ShopCashDesk({ businessId }: { businessId: string }) {
     return (
       <Card variant="outline">
         <CardBody className="flex flex-col gap-2">
-          <Eyebrow>Cash holds</Eyebrow>
+          <Eyebrow>Cash for customers</Eyebrow>
           <Body className="text-[14px] text-muted-foreground">
-            Your shop isn't set up for cash holds yet. CashNear will contact you when your area
-            opens.
+            Your shop is not ready to give out cash through CashNear yet. We will contact you when
+            it is.
           </Body>
         </CardBody>
       </Card>
@@ -115,8 +115,8 @@ export function ShopCashDesk({ businessId }: { businessId: string }) {
           <CardBody className="flex flex-col gap-1">
             <Eyebrow>Waiting for the customer</Eyebrow>
             <Body className="text-[14px] text-muted-foreground">
-              {formatRand(r.amount_cents)} handed over. The customer is confirming. Reference{" "}
-              {r.reference_masked ?? ""}.
+              You gave {formatRand(r.amount_cents)}. We are waiting for the customer to say they got
+              it. Slip number {r.reference_masked ?? ""}.
             </Body>
           </CardBody>
         </Card>
@@ -125,7 +125,7 @@ export function ShopCashDesk({ businessId }: { businessId: string }) {
       <AvailabilityCard state={state} businessId={businessId} onChanged={setState} />
 
       {awaiting.length === 0 && held.length === 0 && state.online ? (
-        <Muted>Waiting for customers. New requests appear here with a sound.</Muted>
+        <Muted>Waiting for customers. You will hear a sound when someone asks.</Muted>
       ) : null}
     </div>
   );
@@ -169,9 +169,9 @@ function AvailabilityCard({
 
   const pausedText =
     state.paused_reason === "dispute_review"
-      ? "Your shop is paused while we review a report. We'll be in touch."
+      ? "Your shop is stopped while we look into a report. We will contact you."
       : state.paused_reason === "missed_requests"
-        ? "Paused after missed requests. Go online to start again."
+        ? "Stopped because some requests were missed. Press the button to start again."
         : null;
   const bandChoices = SHOP_BAND_CHOICES_CENTS.filter((c) => c <= state.max_band_cents);
 
@@ -179,20 +179,20 @@ function AvailabilityCard({
     <Card variant="lift">
       <CardBody className="flex flex-col gap-5">
         <div className="flex items-center justify-between">
-          <Eyebrow>Cash holds</Eyebrow>
+          <Eyebrow>Your cash for customers</Eyebrow>
           <span
             className={cn(
               "text-[12px] uppercase tracking-[0.18em]",
               state.online ? "text-success" : "text-muted-foreground",
             )}
           >
-            {state.online ? "Online" : "Offline"}
+            {state.online ? "Taking requests" : "Not taking requests"}
           </span>
         </div>
         {pausedText ? <Body className="text-[14px] text-gold">{pausedText}</Body> : null}
 
         <div>
-          <p className="text-[13px] text-muted-foreground">Cash you can offer right now</p>
+          <p className="text-[13px] text-muted-foreground">How much cash can you give out?</p>
           <div
             className="mt-2 flex flex-wrap gap-2"
             role="radiogroup"
@@ -239,7 +239,7 @@ function AvailabilityCard({
           <div className="flex flex-col gap-2">
             <Muted className="text-[13px]" suppressHydrationWarning>
               {state.online_until
-                ? `Online until ${new Date(state.online_until).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })}.`
+                ? `Taking requests until ${new Date(state.online_until).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })}.`
                 : ""}
             </Muted>
             <Button
@@ -248,7 +248,7 @@ function AvailabilityCard({
               disabled={busy}
               onClick={() => apply({ minutes: 0 })}
             >
-              Go offline
+              Stop taking requests
             </Button>
           </div>
         ) : (
@@ -278,7 +278,7 @@ function AvailabilityCard({
               disabled={busy || state.paused_reason === "dispute_review"}
               onClick={() => apply({ minutes })}
             >
-              Go online
+              Start taking requests
             </Button>
           </div>
         )}
@@ -316,7 +316,7 @@ function IncomingCard({ req, onChanged }: { req: CashRequestView; onChanged: () 
       <CardBody className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <Eyebrow>New request</Eyebrow>
+            <Eyebrow>Someone needs cash</Eyebrow>
             <p className="mt-1 font-display text-[48px] leading-none" data-testid="incoming-amount">
               {formatRand(req.amount_cents)}
             </p>
@@ -334,10 +334,10 @@ function IncomingCard({ req, onChanged }: { req: CashRequestView; onChanged: () 
           </p>
         ) : null}
         <Button size="lg" fullWidth disabled={busy || left === 0} onClick={() => act("accept")}>
-          Accept and keep {formatRand(req.amount_cents)} aside
+          Yes, I will keep {formatRand(req.amount_cents)} for them
         </Button>
         <Button variant="ghost" fullWidth disabled={busy} onClick={() => act("decline")}>
-          Decline
+          No
         </Button>
       </CardBody>
     </Card>
@@ -390,7 +390,7 @@ function HeldCard({ req, onChanged }: { req: CashRequestView; onChanged: () => v
       <CardBody className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <Eyebrow>Keep aside</Eyebrow>
+            <Eyebrow>Keep this for them</Eyebrow>
             <p className="mt-1 font-display text-[44px] leading-none">
               {formatRand(req.amount_cents)}
             </p>
@@ -410,14 +410,14 @@ function HeldCard({ req, onChanged }: { req: CashRequestView; onChanged: () => v
         {req.handshake ? (
           <Handshake
             words={req.handshake}
-            hint="Ask the customer to say these two words before you hand over cash."
+            hint="Ask the customer to say these two words. They must be the same before you give any cash."
           />
         ) : null}
 
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-              Customer's code
+              The customer's code (6 numbers)
             </span>
             <input
               inputMode="numeric"
@@ -430,7 +430,7 @@ function HeldCard({ req, onChanged }: { req: CashRequestView; onChanged: () => v
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-              Reference from your provider slip
+              Number on your payment slip
             </span>
             <input
               autoComplete="off"
@@ -453,7 +453,7 @@ function HeldCard({ req, onChanged }: { req: CashRequestView; onChanged: () => v
           disabled={busy || code.length !== 6 || reference.trim().length < 4}
           onClick={complete}
         >
-          Cash handed over
+          I gave the cash
         </Button>
       </CardBody>
     </Card>
