@@ -12,6 +12,7 @@ import { loadEnv } from "vite";
 // build wraps this config and supplies env after config load, so a missing var
 // here must only WARN — throwing at config-load time breaks managed builds.
 // The Supabase client itself still fails loudly at runtime if values are absent.
+// (Republish after env rebind: 2026-11-04.)
 const env = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
 const missingVars = [
   ...(!(env.VITE_SUPABASE_URL ?? env.SUPABASE_URL) ? ["VITE_SUPABASE_URL"] : []),
