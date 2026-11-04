@@ -47,6 +47,303 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_fee_schedule: {
+        Row: {
+          cashnear_fee_cents: number
+          effective_from: string
+          id: string
+          max_cents: number
+          min_cents: number
+          partner_fee_cents: number
+          rail_id: string
+        }
+        Insert: {
+          cashnear_fee_cents?: number
+          effective_from?: string
+          id?: string
+          max_cents: number
+          min_cents: number
+          partner_fee_cents: number
+          rail_id: string
+        }
+        Update: {
+          cashnear_fee_cents?: number
+          effective_from?: string
+          id?: string
+          max_cents?: number
+          min_cents?: number
+          partner_fee_cents?: number
+          rail_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_fee_schedule_rail_id_fkey"
+            columns: ["rail_id"]
+            isOneToOne: false
+            referencedRelation: "cash_rails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_incidents: {
+        Row: {
+          business_id: string
+          created_at: string
+          details: string
+          id: string
+          kind: string
+          reporter_id: string | null
+          request_id: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          sla_due: string
+          status: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          details?: string
+          id?: string
+          kind: string
+          reporter_id?: string | null
+          request_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          sla_due: string
+          status?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          details?: string
+          id?: string
+          kind?: string
+          reporter_id?: string | null
+          request_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          sla_due?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_incidents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "operator_businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_incidents_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "cash_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_points: {
+        Row: {
+          area: string | null
+          business_id: string
+          cash_band_cents: number
+          enrolled: boolean
+          latitude: number | null
+          longitude: number | null
+          missed_count: number
+          online: boolean
+          online_until: string | null
+          paused_reason: string | null
+          small_notes: boolean
+          trust_score: number
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          business_id: string
+          cash_band_cents?: number
+          enrolled?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          missed_count?: number
+          online?: boolean
+          online_until?: string | null
+          paused_reason?: string | null
+          small_notes?: boolean
+          trust_score?: number
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          business_id?: string
+          cash_band_cents?: number
+          enrolled?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          missed_count?: number
+          online?: boolean
+          online_until?: string | null
+          paused_reason?: string | null
+          small_notes?: boolean
+          trust_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_points_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "operator_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_rails: {
+        Row: {
+          active: boolean
+          created_at: string
+          fee_verified: boolean
+          id: string
+          label: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          fee_verified?: boolean
+          id: string
+          label: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          fee_verified?: boolean
+          id?: string
+          label?: string
+        }
+        Relationships: []
+      }
+      cash_request_secrets: {
+        Row: {
+          code: string
+          request_id: string
+        }
+        Insert: {
+          code: string
+          request_id: string
+        }
+        Update: {
+          code?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_request_secrets_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "cash_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_requests: {
+        Row: {
+          accept_by: string
+          amount_cents: number
+          business_id: string
+          cashnear_fee_cents: number
+          closed_reason: string | null
+          code_attempts: number
+          code_locked_until: string | null
+          completed_at: string | null
+          created_at: string
+          customer_id: string
+          distance_m: number | null
+          expires_at: string | null
+          handshake: string
+          held_at: string | null
+          id: string
+          idempotency_key: string
+          partner_fee_cents: number
+          rail_id: string
+          rating: number | null
+          shop_completed_at: string | null
+          shop_reference: string | null
+          small_notes: boolean
+          status: Database["public"]["Enums"]["cash_request_status"]
+        }
+        Insert: {
+          accept_by: string
+          amount_cents: number
+          business_id: string
+          cashnear_fee_cents?: number
+          closed_reason?: string | null
+          code_attempts?: number
+          code_locked_until?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id: string
+          distance_m?: number | null
+          expires_at?: string | null
+          handshake: string
+          held_at?: string | null
+          id?: string
+          idempotency_key: string
+          partner_fee_cents: number
+          rail_id: string
+          rating?: number | null
+          shop_completed_at?: string | null
+          shop_reference?: string | null
+          small_notes?: boolean
+          status?: Database["public"]["Enums"]["cash_request_status"]
+        }
+        Update: {
+          accept_by?: string
+          amount_cents?: number
+          business_id?: string
+          cashnear_fee_cents?: number
+          closed_reason?: string | null
+          code_attempts?: number
+          code_locked_until?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          distance_m?: number | null
+          expires_at?: string | null
+          handshake?: string
+          held_at?: string | null
+          id?: string
+          idempotency_key?: string
+          partner_fee_cents?: number
+          rail_id?: string
+          rating?: number | null
+          shop_completed_at?: string | null
+          shop_reference?: string | null
+          small_notes?: boolean
+          status?: Database["public"]["Enums"]["cash_request_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "operator_businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_requests_rail_id_fkey"
+            columns: ["rail_id"]
+            isOneToOne: false
+            referencedRelation: "cash_rails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_profiles: {
         Row: {
           consent_accepted_at: string | null
@@ -399,6 +696,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: number
+          identifier: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: never
+          identifier: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: never
+          identifier?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           granted_at: string
@@ -472,6 +790,120 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cash_cfg: { Args: { p_default: number; p_key: string }; Returns: number }
+      cash_clear_pause: {
+        Args: { p_business: string; p_note: string }
+        Returns: undefined
+      }
+      cash_create_request: {
+        Args: {
+          p_amount_cents: number
+          p_business: string
+          p_distance_m?: number
+          p_idem: string
+          p_rail: string
+          p_small: boolean
+        }
+        Returns: Json
+      }
+      cash_customer_cap_cents: { Args: { p_user: string }; Returns: number }
+      cash_distance_m: {
+        Args: { a_lat: number; a_lng: number; b_lat: number; b_lng: number }
+        Returns: number
+      }
+      cash_enrol_point: {
+        Args: {
+          p_area: string
+          p_business: string
+          p_enrolled: boolean
+          p_lat: number
+          p_lng: number
+        }
+        Returns: {
+          area: string | null
+          business_id: string
+          cash_band_cents: number
+          enrolled: boolean
+          latitude: number | null
+          longitude: number | null
+          missed_count: number
+          online: boolean
+          online_until: string | null
+          paused_reason: string | null
+          small_notes: boolean
+          trust_score: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "cash_points"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cash_get_request: { Args: { p_id: string }; Returns: Json }
+      cash_my_active: { Args: never; Returns: Json }
+      cash_nearby: {
+        Args: {
+          p_amount_cents: number
+          p_lat: number
+          p_lng: number
+          p_rail: string
+          p_small?: boolean
+        }
+        Returns: {
+          business_id: string
+          can_serve: boolean
+          distance_m: number
+          name: string
+          suburb: string
+          walk_min: number
+        }[]
+      }
+      cash_quote: {
+        Args: { p_amount_cents: number; p_rail: string }
+        Returns: Json
+      }
+      cash_reserved_cents: { Args: { p_business: string }; Returns: number }
+      cash_resolve_incident: {
+        Args: { p_incident: string; p_resolution: string }
+        Returns: undefined
+      }
+      cash_set_availability: {
+        Args: {
+          p_band_cents: number
+          p_business: string
+          p_minutes: number
+          p_small: boolean
+        }
+        Returns: Json
+      }
+      cash_set_rail_active: {
+        Args: { p_active: boolean; p_fee_verified?: boolean; p_rail: string }
+        Returns: undefined
+      }
+      cash_shape: {
+        Args: {
+          p_viewer: string
+          r: Database["public"]["Tables"]["cash_requests"]["Row"]
+        }
+        Returns: Json
+      }
+      cash_shop_state: { Args: { p_business: string }; Returns: Json }
+      cash_sweep: { Args: never; Returns: undefined }
+      cash_transition: {
+        Args: { p_action: string; p_id: string; p_payload?: Json }
+        Returns: Json
+      }
+      check_rate_limit: {
+        Args: {
+          p_bucket: string
+          p_identifier: string
+          p_max_attempts: number
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -491,7 +923,22 @@ export type Database = {
           p_entity_type: string
           p_metadata?: Json
         }
-        Returns: string
+        Returns: {
+          action: string
+          actor_id: string | null
+          actor_role: Database["public"]["Enums"]["app_role"] | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "audit_logs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
@@ -509,6 +956,16 @@ export type Database = {
         | "partnership"
         | "cooperative"
         | "other"
+      cash_request_status:
+        | "awaiting_shop"
+        | "held"
+        | "awaiting_confirmation"
+        | "completed"
+        | "declined"
+        | "expired"
+        | "cancelled"
+        | "disputed"
+        | "needs_review"
       document_type:
         | "id_document"
         | "business_registration"
@@ -704,6 +1161,17 @@ export const Constants = {
         "partnership",
         "cooperative",
         "other",
+      ],
+      cash_request_status: [
+        "awaiting_shop",
+        "held",
+        "awaiting_confirmation",
+        "completed",
+        "declined",
+        "expired",
+        "cancelled",
+        "disputed",
+        "needs_review",
       ],
       document_type: [
         "id_document",

@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793782654572,
+      "tag": "0000_cash_hold_engine",
+      "breakpoints": true
+    }
+  ]
+}
