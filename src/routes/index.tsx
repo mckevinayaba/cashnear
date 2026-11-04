@@ -79,6 +79,7 @@ function PublicHome() {
 
       <main>
         <Hero signedIn={signedIn} />
+        <PhotoBand />
         <Flow />
         <Trust />
         <ForShops />
