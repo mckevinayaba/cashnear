@@ -79,6 +79,7 @@ function PublicHome() {
 
       <main>
         <Hero signedIn={signedIn} />
+        <PhotoBand />
         <Flow />
         <Trust />
         <ForShops />
@@ -267,6 +268,26 @@ function SiteHeader({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () 
 
 /* ---------------- Hero ---------------- */
 
+import counterPhoto from "@/assets/spaza-counter-cash.jpg";
+import shopfrontPhoto from "@/assets/spaza-shopfront.jpg";
+import ownerPhoto from "@/assets/shop-owner.jpg";
+
+function PhotoBand() {
+  return (
+    <section className="border-b border-border">
+      <div className="relative">
+        <img src={shopfrontPhoto} alt="A spaza shop on a township street with people walking past" width={1600} height={912} loading="lazy" className="h-[340px] w-full object-cover md:h-[520px]" />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/60 to-transparent">
+          <Container className="pb-8 pt-24">
+            <p className="font-display text-[34px] leading-tight text-foreground md:text-[48px]">The shop on your corner.</p>
+            <p className="mt-2 max-w-[48ch] text-[16px] text-foreground/80">You already know it. Now it can give you cash too. In the app you see a photo of the shop and a landmark, like "next to the taxi rank".</p>
+          </Container>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Hero({ signedIn }: { signedIn: boolean }) {
   return (
     <section className="border-b border-border">
@@ -302,9 +323,14 @@ function Hero({ signedIn }: { signedIn: boolean }) {
           </p>
         </div>
 
-        <PhoneFrame caption="This is how the screen looks. The numbers on it are not real.">
-          <HeldScreen live />
-        </PhoneFrame>
+        <div className="relative mx-auto w-full max-w-[460px]">
+          <img src={counterPhoto} alt="A shopkeeper hands cash through the counter to a smiling customer" width={1280} height={1600} className="aspect-[4/5] w-full rounded-[28px] object-cover shadow-2xl" />
+          <div className="absolute -bottom-6 -left-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-xl md:-left-10">
+            <p className="text-[13px] text-muted-foreground">Your cash is ready</p>
+            <p className="font-display text-[30px] leading-none text-foreground">R200</p>
+            <p className="mt-1 text-[13px] text-gold">Kept for you for 15 min</p>
+          </div>
+        </div>
       </Container>
     </section>
   );
@@ -461,9 +487,7 @@ function ForShops() {
             </PrimaryBtn>
           </div>
         </div>
-        <PhoneFrame caption="How it looks to the shop, in daylight." daylight>
-          <ShopAcceptScreen />
-        </PhoneFrame>
+        <img src={ownerPhoto} alt="A shop owner holding his phone and payment machine behind the counter" width={1280} height={1600} loading="lazy" className="mx-auto aspect-[4/5] w-full max-w-[460px] rounded-[28px] object-cover shadow-2xl" />
       </Container>
     </section>
   );

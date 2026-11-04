@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { shopfrontUrl } from "@/lib/shopfront";
 import { cn } from "@/lib/utils";
+import fallbackPhoto from "@/assets/spaza-shopfront.jpg";
 
 /**
  * The front of the shop, so a customer can see what they are walking to.
@@ -17,8 +18,7 @@ export function ShopfrontPhoto({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const url = shopfrontUrl(path);
-  if (!url || failed) return null;
+  const url = (!failed && shopfrontUrl(path)) || fallbackPhoto;
   return (
     <img
       src={url}
