@@ -8,6 +8,144 @@ export type Database = {
   };
   public: {
     Tables: {
+      cash_rails: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          fee_verified: boolean;
+          id: string;
+          label: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          fee_verified?: boolean;
+          id: string;
+          label: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          fee_verified?: boolean;
+          id?: string;
+          label?: string;
+        };
+        Relationships: [];
+      };
+      cash_fee_schedule: {
+        Row: {
+          cashnear_fee_cents: number;
+          effective_from: string;
+          id: string;
+          max_cents: number;
+          min_cents: number;
+          partner_fee_cents: number;
+          rail_id: string;
+        };
+        Insert: {
+          cashnear_fee_cents?: number;
+          effective_from?: string;
+          id?: string;
+          max_cents: number;
+          min_cents: number;
+          partner_fee_cents: number;
+          rail_id: string;
+        };
+        Update: {
+          cashnear_fee_cents?: number;
+          effective_from?: string;
+          id?: string;
+          max_cents?: number;
+          min_cents?: number;
+          partner_fee_cents?: number;
+          rail_id?: string;
+        };
+        Relationships: [];
+      };
+      cash_points: {
+        Row: {
+          area: string | null;
+          business_id: string;
+          cash_band_cents: number;
+          enrolled: boolean;
+          latitude: number | null;
+          longitude: number | null;
+          missed_count: number;
+          online: boolean;
+          online_until: string | null;
+          paused_reason: string | null;
+          small_notes: boolean;
+          trust_score: number;
+          updated_at: string;
+        };
+        Insert: {
+          area?: string | null;
+          business_id: string;
+          cash_band_cents?: number;
+          enrolled?: boolean;
+          latitude?: number | null;
+          longitude?: number | null;
+          missed_count?: number;
+          online?: boolean;
+          online_until?: string | null;
+          paused_reason?: string | null;
+          small_notes?: boolean;
+          trust_score?: number;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["cash_points"]["Insert"]>;
+        Relationships: [];
+      };
+      cash_requests: {
+        Row: {
+          accept_by: string;
+          amount_cents: number;
+          business_id: string;
+          cashnear_fee_cents: number;
+          closed_reason: string | null;
+          code_attempts: number;
+          code_locked_until: string | null;
+          completed_at: string | null;
+          created_at: string;
+          customer_id: string;
+          distance_m: number | null;
+          expires_at: string | null;
+          handshake: string;
+          held_at: string | null;
+          id: string;
+          idempotency_key: string;
+          partner_fee_cents: number;
+          rail_id: string;
+          rating: number | null;
+          shop_completed_at: string | null;
+          shop_reference: string | null;
+          small_notes: boolean;
+          status: Database["public"]["Enums"]["cash_request_status"];
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      cash_incidents: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          details: string;
+          id: string;
+          kind: string;
+          reporter_id: string | null;
+          request_id: string;
+          resolution: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          severity: string;
+          sla_due: string;
+          status: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       rate_limit_hits: {
         Row: {
           bucket: string;
@@ -463,6 +601,70 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      cash_clear_pause: { Args: { p_business: string; p_note: string }; Returns: undefined };
+      cash_create_request: {
+        Args: {
+          p_amount_cents: number;
+          p_business: string;
+          p_distance_m?: number;
+          p_idem: string;
+          p_rail: string;
+          p_small: boolean;
+        };
+        Returns: Json;
+      };
+      cash_enrol_point: {
+        Args: {
+          p_area: string;
+          p_business: string;
+          p_enrolled: boolean;
+          p_lat: number;
+          p_lng: number;
+        };
+        Returns: Database["public"]["Tables"]["cash_points"]["Row"];
+      };
+      cash_get_request: { Args: { p_id: string }; Returns: Json };
+      cash_my_active: { Args: Record<PropertyKey, never>; Returns: Json };
+      cash_nearby: {
+        Args: {
+          p_amount_cents: number;
+          p_lat: number;
+          p_lng: number;
+          p_rail: string;
+          p_small?: boolean;
+        };
+        Returns: {
+          business_id: string;
+          can_serve: boolean;
+          distance_m: number;
+          name: string;
+          suburb: string;
+          walk_min: number;
+        }[];
+      };
+      cash_quote: { Args: { p_amount_cents: number; p_rail: string }; Returns: Json };
+      cash_resolve_incident: {
+        Args: { p_incident: string; p_resolution: string };
+        Returns: undefined;
+      };
+      cash_set_availability: {
+        Args: {
+          p_band_cents: number | null;
+          p_business: string;
+          p_minutes: number | null;
+          p_small: boolean | null;
+        };
+        Returns: Json;
+      };
+      cash_set_rail_active: {
+        Args: { p_active: boolean; p_fee_verified?: boolean; p_rail: string };
+        Returns: undefined;
+      };
+      cash_shop_state: { Args: { p_business: string }; Returns: Json };
+      cash_transition: {
+        Args: { p_action: string; p_id: string; p_payload?: Json };
+        Returns: Json;
+      };
       check_rate_limit: {
         Args: {
           p_bucket: string;
@@ -491,10 +693,20 @@ export type Database = {
           p_entity_type: string;
           p_metadata?: Json;
         };
-        Returns: string;
+        Returns: Database["public"]["Tables"]["audit_logs"]["Row"];
       };
     };
     Enums: {
+      cash_request_status:
+        | "awaiting_shop"
+        | "held"
+        | "awaiting_confirmation"
+        | "completed"
+        | "declined"
+        | "expired"
+        | "cancelled"
+        | "disputed"
+        | "needs_review";
       app_role:
         | "customer"
         | "operator_owner"
@@ -682,6 +894,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      cash_request_status: [
+        "awaiting_shop",
+        "held",
+        "awaiting_confirmation",
+        "completed",
+        "declined",
+        "expired",
+        "cancelled",
+        "disputed",
+        "needs_review",
+      ],
       app_role: [
         "customer",
         "operator_owner",

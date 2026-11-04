@@ -19,6 +19,7 @@ import { requireAdminBeforeLoad } from "@/lib/admin-route-guard";
 import { allowedAdminTransitionsFrom, canReinstateFrom } from "@/lib/operator-application-state";
 import { isReasonRequired } from "@/lib/admin-reason-validation";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
+import { CashPointPanel } from "@/components/admin/CashPointPanel";
 import { DocumentLink } from "@/components/admin/DocumentLink";
 import { StatusBadge, OPERATOR_STATUS_TONE } from "@/components/admin/StatusBadge";
 import { DEMO_OPERATOR_OWNER_USER_ID } from "@/lib/demo-accounts";
@@ -323,6 +324,8 @@ function OperatorReview() {
             )}
           </CardBody>
         </Card>
+
+        <CashPointPanel businessId={b.id} approved={b.application_status === "approved"} />
 
         <section>
           <Eyebrow>Review history</Eyebrow>

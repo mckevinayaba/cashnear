@@ -87,6 +87,24 @@ function Customer() {
           </button>
         </header>
 
+        {!showForm ? (
+          <Card variant="lift">
+            <CardBody className="flex flex-col gap-3">
+              <Eyebrow>Get cash</Eyebrow>
+              <Display className="text-[30px] leading-[1.1]">Need cash near you?</Display>
+              <Body className="text-[14px] text-muted-foreground">
+                See which shops can serve you, know the fee before you walk, and have the shop keep
+                it aside.
+              </Body>
+              <Link to="/cash">
+                <Button size="lg" fullWidth>
+                  Get cash
+                </Button>
+              </Link>
+            </CardBody>
+          </Card>
+        ) : null}
+
         {loading ? (
           <Muted>Loading your account…</Muted>
         ) : isVerified ? (
@@ -150,14 +168,14 @@ function VerificationSummary({
       ? "We are checking your details."
       : status === "rejected"
         ? "We still need more information."
-        : "Check your details.";
+        : "Check your details (optional).";
 
   const body =
     status === "pending"
       ? "We are checking your details. This usually takes one business day."
       : status === "rejected"
         ? reviewNotes || "Please check your details and try again with a clearer document."
-        : "We check your details to keep everyone safe before cash requests open.";
+        : "You can ask for cash without this. It is optional for now.";
 
   return (
     <>

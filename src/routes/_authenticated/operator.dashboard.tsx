@@ -12,6 +12,7 @@ import {
   CardBody,
   Button,
 } from "@/components/ds";
+import { ShopCashDesk } from "@/components/cash/ShopCashDesk";
 import type { Database } from "@/integrations/supabase/types";
 
 type Business = Database["public"]["Tables"]["operator_businesses"]["Row"];
@@ -40,6 +41,7 @@ function OperatorDashboard() {
   const navigate = useNavigate();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cashEnrolled, setCashEnrolled] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -53,6 +55,14 @@ function OperatorDashboard() {
         .limit(1)
         .maybeSingle();
       setBusiness(data);
+      if (data?.id) {
+        const { data: point } = await supabase
+          .from("cash_points")
+          .select("enrolled")
+          .eq("business_id", data.id)
+          .maybeSingle();
+        setCashEnrolled(!!point?.enrolled);
+      }
       setLoading(false);
     })();
   }, []);
@@ -147,7 +157,14 @@ function OperatorDashboard() {
           </CardBody>
         </Card>
 
-        {business.application_status === "approved" ? (
+        {business.application_status === "approved" && cashEnrolled ? (
+          <section className="flex flex-col gap-4">
+            <Eyebrow>Cash desk</Eyebrow>
+            <ShopCashDesk businessId={business.id} />
+          </section>
+        ) : null}
+
+        {business.application_status === "approved" && !cashEnrolled ? (
           <Card variant="lift">
             <CardBody className="flex flex-col gap-3">
               <Display className="text-[24px]">Your business is approved.</Display>
@@ -180,7 +197,7 @@ function OperatorDashboard() {
               </div>
             </CardBody>
           </Card>
-        ) : (
+        ) : business.application_status !== "approved" ? (
           <Card variant="outline">
             <CardBody className="flex flex-col gap-2">
               <Eyebrow>Coming soon</Eyebrow>
@@ -190,7 +207,7 @@ function OperatorDashboard() {
               </Body>
             </CardBody>
           </Card>
-        )}
+        ) : null}
       </Screen>
     </AppShell>
   );

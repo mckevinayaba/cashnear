@@ -174,6 +174,18 @@ function AdminHome() {
             </Card>
           </Link>
 
+          <Link to="/admin/cash">
+            <Card variant="lift" className="cursor-pointer h-full">
+              <CardBody>
+                <Eyebrow className="text-gold">Pilot</Eyebrow>
+                <h3 className="mt-2 font-display text-[22px] leading-tight">Cash holds</h3>
+                <Body className="mt-2 text-[14px] text-muted-foreground">
+                  Open or close the rail, resolve reports, and review paused shops.
+                </Body>
+              </CardBody>
+            </Card>
+          </Link>
+
           <Link to="/admin/audit">
             <Card variant="outline" className="cursor-pointer h-full">
               <CardBody>
