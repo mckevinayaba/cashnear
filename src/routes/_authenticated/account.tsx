@@ -1,7 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, Screen } from "@/components/ds";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({ meta: [{ title: "Your account — CashNear" }, { name: "description", content: "Your CashNear account and settings." }] }),
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/_authenticated/account")({
 
 function AccountPage() {
   const navigate = useNavigate();
+  const auth = useAuth();
   const [email, setEmail] = useState<string>("");
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? "")); }, []);
   return (
@@ -20,6 +22,16 @@ function AccountPage() {
           <p className="text-[14px] text-muted-foreground">Signed in as</p>
           <p className="mt-1 break-all text-[18px] text-foreground">{email}</p>
         </div>
+        {(auth.isAdmin || auth.isOperator) && (
+          <div className="rounded-3xl border border-border bg-card p-6">
+            <p className="text-[14px] text-muted-foreground">Switch view</p>
+            <div className="mt-3 grid gap-2">
+              <Link to="/customer" className="min-h-12 rounded-full border border-border px-5 py-3 text-[16px] text-foreground">Customer</Link>
+              {auth.isOperator && <Link to="/operator/dashboard" className="min-h-12 rounded-full border border-border px-5 py-3 text-[16px] text-foreground">My shop</Link>}
+              {auth.isAdmin && <Link to="/admin" className="min-h-12 rounded-full border border-border px-5 py-3 text-[16px] text-foreground">Admin</Link>}
+            </div>
+          </div>
+        )}
         <button
           onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/" }); }}
           className="min-h-14 rounded-full border border-border text-[16px] font-medium text-foreground"
