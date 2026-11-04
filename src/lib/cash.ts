@@ -215,3 +215,92 @@ export function fitWithin(
     height: Math.max(1, Math.round(height * scale)),
   };
 }
+
+/* ---------- Activity (a customer's own history) ---------- */
+
+export interface CashHistoryItem {
+  id: string;
+  status: CashStatus;
+  amount_cents: number;
+  created_at: string;
+  completed_at: string | null;
+  closed_reason: string | null;
+  shop_name: string | null;
+}
+
+export type ActivityTone = "success" | "warn" | "muted";
+
+/** One line a person can read at a glance: how it ended, in everyday words. */
+export function describeActivity(item: CashHistoryItem): { outcome: string; tone: ActivityTone } {
+  switch (item.status) {
+    case "completed":
+      return { outcome: "You got your cash", tone: "success" };
+    case "awaiting_shop":
+      return { outcome: "Waiting for the shop", tone: "warn" };
+    case "held":
+      return { outcome: "Cash kept for you", tone: "warn" };
+    case "awaiting_confirmation":
+      return { outcome: "Waiting for you to confirm", tone: "warn" };
+    case "disputed":
+    case "needs_review":
+      return { outcome: "We are looking into it", tone: "warn" };
+    case "cancelled":
+      return { outcome: "You cancelled", tone: "muted" };
+    case "declined":
+      return { outcome: "The shop could not help", tone: "muted" };
+    case "expired":
+      return item.closed_reason === "hold_window_passed"
+        ? { outcome: "Time ran out", tone: "muted" }
+        : { outcome: "The shop did not answer", tone: "muted" };
+    default:
+      return { outcome: "Ended", tone: "muted" };
+  }
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function sameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/** "Today, 14:20", "Yesterday, 09:05", or "3 Nov". Local time, 24-hour clock. */
+export function formatWhen(iso: string | null | undefined, now: Date = new Date()): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  if (sameDay(d, now)) return `Today, ${time}`;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (sameDay(d, yesterday)) return `Yesterday, ${time}`;
+  const date = `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  return d.getFullYear() === now.getFullYear() ? date : `${date} ${d.getFullYear()}`;
+}
+
+export function greetingFor(hour: number): string {
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+/** First name from a full name, or nothing if there is none. */
+export function firstNameOf(fullName: string | null | undefined): string {
+  return (fullName ?? "").trim().split(/\s+/)[0] ?? "";
+}
+
+/** Up to two capital letters for the round badge that stands in for a photo. */
+export function initialsOf(nameOrEmail: string | null | undefined): string {
+  const source = (nameOrEmail ?? "").trim();
+  if (!source) return "C";
+  const base = source.includes("@") ? source.split("@")[0].replace(/[._-]+/g, " ") : source;
+  const letters = base
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "");
+  return letters.join("") || "C";
+}

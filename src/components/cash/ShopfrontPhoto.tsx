@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { shopfrontUrl } from "@/lib/shopfront";
 import { cn } from "@/lib/utils";
-import fallbackPhoto from "@/assets/spaza-shopfront.jpg";
 
 /**
  * The front of the shop, so a customer can see what they are walking to.
- * Shows nothing at all when there is no photo or it fails to load, so a missing
- * picture never looks like a broken page.
+ * Shows nothing at all when there is no photo or it fails to load. It must
+ * never show a stand-in picture: a photo of some other shop, labelled with this
+ * shop's name, would send a customer looking for a place that does not look
+ * like that.
  */
 export function ShopfrontPhoto({
   path,
@@ -18,7 +19,8 @@ export function ShopfrontPhoto({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const url = (!failed && shopfrontUrl(path)) || fallbackPhoto;
+  const url = shopfrontUrl(path);
+  if (!url || failed) return null;
   return (
     <img
       src={url}

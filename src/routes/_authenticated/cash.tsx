@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AppShell,
@@ -16,7 +16,6 @@ import { Handshake } from "@/components/cash/Handshake";
 import { HoldRing } from "@/components/cash/HoldRing";
 import { ShopfrontPhoto } from "@/components/cash/ShopfrontPhoto";
 import { useCountdown } from "@/hooks/use-countdown";
-import { useShopTheme } from "@/hooks/use-shop-theme";
 import {
   cashNearby,
   cashQuote,
@@ -43,6 +42,12 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/cash")({
+  // Home can open this screen with an amount already chosen. Only the amounts
+  // the app offers are accepted; anything else is ignored.
+  validateSearch: (search: Record<string, unknown>): { amount?: number } => {
+    const n = Number(search.amount);
+    return (AMOUNT_CHOICES_CENTS as readonly number[]).includes(n) ? { amount: n } : {};
+  },
   head: () => ({ meta: [{ title: "Get cash · CashNear" }] }),
   component: CashPage,
 });
@@ -55,9 +60,7 @@ type Phase =
 
 function CashPage() {
   const [phase, setPhase] = useState<Phase>({ name: "loading" });
-  // Customers use this screen on the street, often in strong sun, so it opens
-  // bright and high-contrast. They can switch to the dark look if they prefer.
-  const [theme, toggleTheme] = useShopTheme();
+  const { amount: startAmount } = Route.useSearch();
 
   useEffect(() => {
     let cancelled = false;
@@ -75,23 +78,9 @@ function CashPage() {
   return (
     <AppShell>
       <Screen className="gap-8">
-        <header className="flex items-baseline justify-between pt-2">
-          <Link to="/customer" className="font-display text-[22px] tracking-tight">
-            CashNear
-          </Link>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-pressed={theme === "day"}
-            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
-          >
-            {theme === "day" ? "Night mode" : "Daylight"}
-          </button>
-        </header>
-
         {phase.name === "loading" ? <Muted>Loading…</Muted> : null}
         {phase.name === "ask" ? (
-          <AskView onShops={(p) => setPhase({ name: "shops", ...p })} />
+          <AskView initialAmount={startAmount} onShops={(p) => setPhase({ name: "shops", ...p })} />
         ) : null}
         {phase.name === "shops" ? (
           <ShopsView
@@ -152,11 +141,13 @@ function Switch({
 }
 
 function AskView({
+  initialAmount,
   onShops,
 }: {
+  initialAmount?: number;
   onShops: (p: { shops: NearbyShop[]; amount: number; small: boolean }) => void;
 }) {
-  const [amount, setAmount] = useState<number>(20000);
+  const [amount, setAmount] = useState<number>(initialAmount ?? 20000);
   const [small, setSmall] = useState(false);
   const [quote, setQuote] = useState<CashQuote | null>(null);
   const [closed, setClosed] = useState(false);

@@ -851,6 +851,7 @@ export type Database = {
       }
       cash_get_request: { Args: { p_id: string }; Returns: Json }
       cash_my_active: { Args: never; Returns: Json }
+      cash_my_history: { Args: { p_limit?: number }; Returns: Json }
       cash_nearby: {
         Args: {
           p_amount_cents: number

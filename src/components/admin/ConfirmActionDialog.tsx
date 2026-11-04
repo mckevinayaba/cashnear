@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ds";
+import { Button } from "@/components/ds/Button";
 import { Textarea } from "@/components/ui/textarea";
 import { MIN_REASON_LENGTH } from "@/lib/admin-reason-validation";
 

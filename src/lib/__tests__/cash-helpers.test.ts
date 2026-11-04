@@ -211,26 +211,25 @@ describe("shop photos", () => {
 });
 
 describe("customers are never made to feel an ID is needed", () => {
-  const customer = read("src/routes/_authenticated/customer.tsx");
+  const home = read("src/routes/_authenticated/customer.tsx");
 
-  test("the account page says so plainly, and offers details as a choice", () => {
-    expect(customer).toContain("You do not need an ID, a selfie or any papers to get cash");
-    expect(customer).toContain("Add my details");
+  test("the home screen has no ID, selfie or verification step at all", () => {
+    expect(home).not.toMatch(
+      /selfie|id_document|VerificationForm|verification_status|customer_profiles/i,
+    );
+    expect(home).not.toMatch(/ProgressBar|Under review|Not started/);
   });
 
-  test("there is no verification progress, steps or percentage on the account page", () => {
-    expect(customer).not.toMatch(/ProgressBar|Verification<\/Eyebrow>|Under review|Not started/);
-    expect(customer).not.toMatch(/<Line\b|Account created|Details sent|Approved<\/Line>/);
-  });
-
-  test("the get-cash card comes first on the account page", () => {
-    const cash = customer.indexOf("Need cash near you?");
-    const details = customer.indexOf("<OptionalDetails");
+  test("getting cash comes first on the home screen, before recent activity", () => {
+    const cash = home.indexOf("Find cash near me");
+    const recent = home.indexOf('id="recent-heading"');
     expect(cash).toBeGreaterThan(-1);
-    expect(cash).toBeLessThan(details);
+    expect(cash).toBeLessThan(recent);
   });
 
-  test("the customer's cash screens open in daylight, because customers use them outdoors", () => {
-    expect(read("src/routes/_authenticated/cash.tsx")).toContain("useShopTheme()");
+  test("the customer's screens open in daylight through the shared app shell", () => {
+    const shell = read("src/components/ds/AppShell.tsx");
+    expect(shell).toContain("useApplyTheme()");
+    expect(read("src/routes/_authenticated/cash.tsx")).toMatch(/<AppShell>/);
   });
 });

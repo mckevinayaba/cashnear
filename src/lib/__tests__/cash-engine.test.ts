@@ -812,3 +812,65 @@ describe("shopfront: a landmark and a photo, set only by the person who visits",
     expect(still.n).toBe(1);
   });
 });
+
+describe("activity: a customer's own history", () => {
+  let historyCustomer: string;
+  let otherCustomer: string;
+  const history = (who: string, limit?: number) =>
+    db.as(who, "authenticated", async (tx) =>
+      j(
+        (
+          await (limit === undefined
+            ? tx`select public.cash_my_history() as r`
+            : tx`select public.cash_my_history(${limit}::int) as r`)
+        )[0].r,
+      ),
+    );
+
+  test("a new customer has an empty history, not an error", async () => {
+    historyCustomer = await createUser(db.sql, "history@example.test", "History Person");
+    otherCustomer = await createUser(db.sql, "history2@example.test", "Other Person");
+    expect(await history(historyCustomer)).toEqual([]);
+  });
+
+  test("it lists the customer's own requests, newest first, and nobody else's", async () => {
+    await resetShop(shop);
+    const first = await create(historyCustomer, shop, 10000);
+    await act(historyCustomer, first.id, "cancel");
+    const second = await create(historyCustomer, shop2, 10000);
+    await act(historyCustomer, second.id, "cancel");
+    const list = await history(historyCustomer);
+    expect(list.map((i: { id: string }) => i.id)).toEqual([second.id, first.id]);
+    expect(list[0].shop_name).toBe("Sipho Mini Market");
+    expect(list[0].amount_cents).toBe(10000);
+    expect(list[0].status).toBe("cancelled");
+    expect(await history(otherCustomer)).toEqual([]);
+  });
+
+  test("it never includes a code, the two words, an address or a location", async () => {
+    const [item] = await history(historyCustomer);
+    expect(Object.keys(item).sort()).toEqual([
+      "amount_cents",
+      "closed_reason",
+      "completed_at",
+      "created_at",
+      "id",
+      "shop_name",
+      "status",
+    ]);
+  });
+
+  test("the limit is kept between 1 and 50, and a bad value does not fail", async () => {
+    expect((await history(historyCustomer, 1)).length).toBe(1);
+    expect((await history(historyCustomer, 0)).length).toBe(1);
+    expect((await history(historyCustomer, -5)).length).toBe(1);
+    expect((await history(historyCustomer, 5000)).length).toBe(2);
+  });
+
+  test("a signed-out caller cannot read it", async () => {
+    const [row] = await db.sql`
+      select has_function_privilege('anon', 'public.cash_my_history(int)', 'execute') as anon
+    `;
+    expect(row.anon).toBe(false);
+  });
+});

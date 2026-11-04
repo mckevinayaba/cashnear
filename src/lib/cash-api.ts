@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   describeCashError,
   type CashQuote,
+  type CashHistoryItem,
   type CashRequestView,
   type NearbyShop,
   type ShopCashState,
@@ -112,4 +113,8 @@ export function getPosition(timeoutMs = 8000): Promise<{ lat: number; lng: numbe
       { enableHighAccuracy: false, timeout: timeoutMs, maximumAge: 60_000 },
     );
   });
+}
+
+export function cashMyHistory(limit = 20) {
+  return call<CashHistoryItem[]>(supabase.rpc("cash_my_history", { p_limit: limit }));
 }

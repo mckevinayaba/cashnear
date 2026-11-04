@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const repoRoot = join(import.meta.dir, "..", "..", "..");
@@ -112,7 +112,7 @@ describe("the public page makes no claim the product can't back", () => {
 
   test("every example screen is labelled as an example", () => {
     const captions = [...page.matchAll(/caption(?:=|:\s*)"([^"]+)"/g)].map((m) => m[1]);
-    expect(captions.length).toBeGreaterThanOrEqual(6);
+    expect(captions.length).toBeGreaterThanOrEqual(4);
     for (const c of captions) expect(c).toMatch(/not real|how it looks/i);
   });
 
@@ -120,10 +120,20 @@ describe("the public page makes no claim the product can't back", () => {
     expect(read("src/components/landing/ExampleScreens.tsx")).toMatch(/aria-hidden="true"/);
   });
 
-  test("the product is visible on a phone: the hero shows a real screen, not a desktop-only graphic", () => {
+  test("the hero is a real photo, and any app card laid over it says it is an example", () => {
     const hero = page.slice(page.indexOf("function Hero"), page.indexOf("function Flow"));
-    expect(hero).toContain("<PhoneFrame");
-    expect(hero).not.toMatch(/hidden\s+lg:block/);
+    expect(hero).toContain("<img");
+    expect(hero).toMatch(/Example screen/);
+  });
+
+  test("every photo has plain alt text, and no photo file is named after a place", () => {
+    const alts = [...page.matchAll(/<img[^>]*\salt="([^"]+)"/g)].map((m) => m[1]);
+    expect(alts.length).toBeGreaterThanOrEqual(3);
+    for (const alt of alts)
+      expect(alt).not.toMatch(/Soweto|Orlando|Johannesburg|Hillbrow|Alexandra|Tembisa/);
+    const assets = readdirSync(join(repoRoot, "src", "assets"));
+    for (const name of assets)
+      expect(name).not.toMatch(/soweto|orlando|johannesburg|hillbrow|alexandra|tembisa/i);
   });
 
   test("no stock icon library on the public page", () => {

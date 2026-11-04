@@ -3,14 +3,6 @@
  */
 export { Button, buttonVariants, type ButtonProps } from "./Button";
 export { Card, CardHeader, CardBody, CardTitle, CardSubtle } from "./Card";
-export {
-  Display,
-  Headline,
-  Title,
-  Body,
-  Muted,
-  Eyebrow,
-  Numeric,
-} from "./Typography";
+export { Display, Headline, Title, Body, Muted, Eyebrow, Numeric } from "./Typography";
 export { AppShell, Screen, Section } from "./AppShell";
-export { BottomNav } from "./BottomNav";
+export { AppNav, BottomNav, SideNav } from "./AppNav";

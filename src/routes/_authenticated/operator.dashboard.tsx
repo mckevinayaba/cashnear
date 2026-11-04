@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -40,7 +40,6 @@ const STATUS_LABEL: Record<
 };
 
 function OperatorDashboard() {
-  const navigate = useNavigate();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [cashEnrolled, setCashEnrolled] = useState(false);
@@ -70,14 +69,9 @@ function OperatorDashboard() {
     })();
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/", replace: true });
-  };
-
   if (loading) {
     return (
-      <AppShell hideNav>
+      <AppShell size="medium">
         <Screen>
           <Muted>Loading…</Muted>
         </Screen>
@@ -87,7 +81,7 @@ function OperatorDashboard() {
 
   if (!business) {
     return (
-      <AppShell hideNav>
+      <AppShell size="medium">
         <Screen>
           <Eyebrow>Your business</Eyebrow>
           <Display className="text-[42px]">Finish registering your business.</Display>
@@ -104,25 +98,17 @@ function OperatorDashboard() {
     business.application_status === "draft" || business.application_status === "info_requested";
 
   return (
-    <AppShell hideNav>
+    <AppShell size="medium">
       <Screen>
         <header className="flex items-center justify-between pt-2">
           <Eyebrow>Your business</Eyebrow>
-          <div className="flex items-center gap-5">
-            <button
-              onClick={toggleTheme}
-              aria-pressed={theme === "day"}
-              className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
-            >
-              {theme === "day" ? "Night mode" : "Daylight"}
-            </button>
-            <button
-              onClick={signOut}
-              className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
-            >
-              Sign out
-            </button>
-          </div>
+          <button
+            onClick={toggleTheme}
+            aria-pressed={theme === "day"}
+            className="text-[12px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground"
+          >
+            {theme === "day" ? "Night mode" : "Daylight"}
+          </button>
         </header>
 
         <div>
