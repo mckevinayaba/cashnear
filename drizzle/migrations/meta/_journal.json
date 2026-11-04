@@ -43,6 +43,13 @@
       "when": 1793814147237,
       "tag": "0005_pilot_config_admin_only_read",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793822395753,
+      "tag": "0006_cash_admin_management",
+      "breakpoints": true
     }
   ]
 }
