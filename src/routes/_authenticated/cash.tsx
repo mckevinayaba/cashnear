@@ -73,7 +73,7 @@ function CashPage() {
   }, []);
 
   return (
-    <AppShell hideNav>
+    <AppShell>
       <Screen className="gap-8">
         <header className="flex items-baseline justify-between pt-2">
           <Link to="/customer" className="font-display text-[22px] tracking-tight">

@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCashRouteImport } from './routes/_authenticated/cash'
 import { Route as AuthenticatedCustomerRouteImport } from './routes/_authenticated/customer'
@@ -66,6 +67,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/health': typeof HealthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cash': typeof AuthenticatedCashRoute
   '/customer': typeof AuthenticatedCustomerRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/health': typeof HealthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/cash': typeof AuthenticatedCashRoute
   '/customer': typeof AuthenticatedCustomerRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/health': typeof HealthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/cash': typeof AuthenticatedCashRoute
   '/_authenticated/customer': typeof AuthenticatedCustomerRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/account'
     | '/admin'
     | '/cash'
     | '/customer'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/account'
     | '/cash'
     | '/customer'
     | '/home'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/cash'
     | '/_authenticated/customer'
@@ -362,6 +374,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
@@ -516,6 +535,7 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCashRoute: typeof AuthenticatedCashRoute
   AuthenticatedCustomerRoute: typeof AuthenticatedCustomerRoute
@@ -526,6 +546,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCashRoute: AuthenticatedCashRoute,
   AuthenticatedCustomerRoute: AuthenticatedCustomerRoute,

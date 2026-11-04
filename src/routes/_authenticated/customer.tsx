@@ -61,7 +61,7 @@ function Customer() {
   const status = customer?.verification_status ?? "unverified";
 
   return (
-    <AppShell hideNav>
+    <AppShell>
       <Screen>
         <header className="flex items-center justify-between pt-2">
           <div>

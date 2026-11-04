@@ -269,17 +269,17 @@ function SiteHeader({ signedIn, onSignOut }: { signedIn: boolean; onSignOut: () 
 /* ---------------- Hero ---------------- */
 
 import counterPhoto from "@/assets/spaza-counter-cash.jpg";
-import shopfrontPhoto from "@/assets/spaza-shopfront.jpg";
+import cityPhoto from "@/assets/hillbrow-corner-store.jpg";
 import ownerPhoto from "@/assets/shop-owner.jpg";
 
 function PhotoBand() {
   return (
     <section className="border-b border-border">
       <div className="relative">
-        <img src={shopfrontPhoto} alt="A spaza shop on a township street with people walking past" width={1600} height={912} loading="lazy" className="h-[340px] w-full object-cover md:h-[520px]" />
+        <img src={cityPhoto} alt="A busy inner-city corner shop in Hillbrow, Johannesburg" width={1600} height={912} loading="lazy" className="h-[340px] w-full object-cover md:h-[520px]" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/60 to-transparent">
           <Container className="pb-8 pt-24">
-            <p className="font-display text-[34px] leading-tight text-foreground md:text-[48px]">The shop on your corner.</p>
+            <p className="font-display text-[34px] leading-tight text-foreground md:text-[48px]">The shop on your corner. In the township or the city.</p>
             <p className="mt-2 max-w-[48ch] text-[16px] text-foreground/80">You already know it. Now it can give you cash too. In the app you see a photo of the shop and a landmark, like "next to the taxi rank".</p>
           </Container>
         </div>
